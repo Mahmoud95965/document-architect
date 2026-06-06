@@ -1,0 +1,613 @@
+/* ─── Google Fonts ─────────────────────────────────────── */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap");
+
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ─── Theme Tokens ─────────────────────────────────────── */
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-glow: var(--glow);
+  --color-glow-2: var(--glow-2);
+  --font-display: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+:root {
+  --radius: 0.875rem;
+
+  /* ── Core Background Layers (Light Mode) ── */
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+
+  /* ── Primary: Indigo/Blue (Word) ── */
+  --primary: oklch(0.62 0.22 265);
+  --primary-foreground: #ffffff;
+
+  /* ── Secondary ── */
+  --secondary: #f1f5f9;
+  --secondary-foreground: #0f172a;
+
+  /* ── Muted ── */
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+
+  /* ── Accent: Gold/Orange ── */
+  --accent: oklch(0.72 0.21 45);
+  --accent-foreground: #0f172a;
+
+  /* ── Destructive ── */
+  --destructive: oklch(0.58 0.22 22);
+  --destructive-foreground: #ffffff;
+
+  /* ── Borders / Inputs ── */
+  --border: rgba(0, 0, 0, 0.1);
+  --input: rgba(0, 0, 0, 0.1);
+  --ring: oklch(0.62 0.22 265);
+
+  /* ── Glow Colors ── */
+  --glow: #6366f1;
+  --glow-2: #f97316;
+
+  /* ── Feature Colors ── */
+  --word-color: #6366f1;
+  --excel-color: #10b981;
+  --ppt-color: #f97316;
+
+  /* ── Excel Preview ── */
+  --excel-grid-bg: #ffffff;
+  --excel-row-even: #ffffff;
+  --excel-row-odd: #f8fafc;
+  --excel-row-hover: #f1f5f9;
+  --excel-header-letter-bg: #f1f5f9;
+  --excel-header-letter-fg: #64748b;
+  --excel-border: #e2e8f0;
+  --excel-formula-bar-bg: #ffffff;
+  --excel-sheet-tabs-bg: #f8fafc;
+  --excel-sheet-tab-active-bg: #ffffff;
+  --excel-sheet-tab-active-fg: #0f172a;
+  --excel-sheet-tab-inactive-fg: #64748b;
+  --excel-preview-bg: #f8fafc;
+
+  /* ── Word Preview ── */
+  --word-preview-bg: #f1f5f9;
+  --word-page-border: #cbd5e1;
+}
+
+.dark {
+  --background: #050507;
+  --foreground: #f4f4f6;
+  --card: #0c0c10;
+  --card-foreground: #f4f4f6;
+  --popover: #0c0c10;
+  --popover-foreground: #f4f4f6;
+  --secondary: #181820;
+  --secondary-foreground: #f4f4f6;
+  --muted: #141418;
+  --muted-foreground: #6b6b7b;
+  --accent-foreground: #050507;
+  --border: rgba(255, 255, 255, 0.06);
+  --input: rgba(255, 255, 255, 0.04);
+  --word-color: #818cf8;
+  --excel-color: #34d399;
+  --ppt-color: #fb923c;
+  --excel-grid-bg: #0d0d11;
+  --excel-row-even: #0d0d11;
+  --excel-row-odd: #111116;
+  --excel-row-hover: #18181f;
+  --excel-header-letter-bg: #141419;
+  --excel-header-letter-fg: #52526a;
+  --excel-border: rgba(255, 255, 255, 0.055);
+  --excel-formula-bar-bg: #0a0a0d;
+  --excel-sheet-tabs-bg: #0a0a0d;
+  --excel-sheet-tab-active-bg: #0d0d11;
+  --excel-sheet-tab-active-fg: #ffffff;
+  --excel-sheet-tab-inactive-fg: #52526a;
+  --excel-preview-bg: #0d0d11;
+  --word-preview-bg: #080809;
+  --word-page-border: rgba(255, 255, 255, 0.07);
+}
+
+/* ─── Base Reset ───────────────────────────────────────── */
+@layer base {
+  * {
+    border-color: var(--border);
+    box-sizing: border-box;
+  }
+
+  html, body, #root {
+    min-height: 100vh;
+    background-color: var(--background);
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-display);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 15% -5%,  rgba(99, 102, 241, 0.18) 0%, transparent 65%),
+      radial-gradient(ellipse 60% 40% at 85%  35%,  rgba(249, 115, 22, 0.10) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 35% at 50% 100%,  rgba(16, 185, 129, 0.06) 0%, transparent 60%);
+    background-attachment: fixed;
+  }
+
+  ::selection {
+    background: rgba(99, 102, 241, 0.28);
+    color: #fff;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 99px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.14);
+  }
+}
+
+/* ─── Utilities ────────────────────────────────────────── */
+@layer utilities {
+
+  /* ── Glassmorphism ── */
+  .glass {
+    background: rgba(0, 0, 0, 0.03);
+    backdrop-filter: blur(18px) saturate(150%);
+    -webkit-backdrop-filter: blur(18px) saturate(150%);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+  }
+  .dark .glass {
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+  .glass-strong {
+    background: rgba(255, 255, 255, 0.045);
+    backdrop-filter: blur(28px) saturate(160%);
+    -webkit-backdrop-filter: blur(28px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+  }
+  .glass-card {
+    background: linear-gradient(135deg, rgba(0,0,0,0.03) 0%, rgba(0,0,0,0.01) 100%);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 1.25rem;
+  }
+  .dark .glass-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0.01) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+  }
+
+  /* ── Dot Grid background ── */
+  .grid-bg {
+    background-image:
+      radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+  .line-grid-bg {
+    background-image:
+      linear-gradient(to right,  rgba(255,255,255,0.025) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+
+  /* ── Text Gradients ── */
+  .text-gradient {
+    background: linear-gradient(135deg, #1e293b 0%, #4f46e5 40%, #ea580c 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .dark .text-gradient {
+    background: linear-gradient(135deg, #ffffff 0%, #c7d2fe 40%, #fcd34d 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .text-gradient-indigo {
+    background: linear-gradient(135deg, #a5b4fc 0%, #818cf8 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .text-gradient-emerald {
+    background: linear-gradient(135deg, #6ee7b7 0%, #34d399 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .text-gradient-orange {
+    background: linear-gradient(135deg, #fde68a 0%, #fb923c 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* ── Bento Grid Cards ── */
+  .bento-card {
+    position: relative;
+    background: linear-gradient(145deg, rgba(255,255,255,0.032) 0%, rgba(255,255,255,0.008) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.065);
+    border-radius: 1.5rem;
+    padding: 1.5rem;
+    overflow: hidden;
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                border-color 0.35s ease,
+                box-shadow 0.35s ease;
+  }
+  .bento-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+      rgba(99, 102, 241, 0.07),
+      transparent 50%
+    );
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    border-radius: inherit;
+  }
+  .bento-card:hover::before { opacity: 1; }
+  .bento-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow:
+      0 20px 60px -20px rgba(0, 0, 0, 0.8),
+      0 0 0 1px rgba(255,255,255,0.03) inset;
+  }
+
+  /* ── Animated Rainbow Border ── */
+  .border-glow {
+    position: relative;
+  }
+  .border-glow::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(90deg, #6366f1, #10b981, #f97316, #6366f1);
+    background-size: 400% 400%;
+    animation: borderGlowAnimation 6s linear infinite;
+    -webkit-mask:
+       linear-gradient(#fff 0 0) content-box,
+       linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    pointer-events: none;
+    opacity: 0.8;
+  }
+
+  /* ── Shimmer button overlay ── */
+  .btn-shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-shimmer::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.15) 50%, transparent 60%);
+    background-size: 200% 100%;
+    transform: translateX(-100%);
+    transition: transform 0.5s ease;
+  }
+  .btn-shimmer:hover::after {
+    transform: translateX(100%);
+  }
+
+  /* ── Glowing Dot ── */
+  .glow-dot {
+    position: relative;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #6ee7b7;
+    box-shadow: 0 0 8px 2px rgba(52, 211, 153, 0.5);
+    animation: glowPulse 2s ease-in-out infinite;
+  }
+
+  /* ── Scanner loading effect ── */
+  .skeleton-scan {
+    position: relative;
+    overflow: hidden;
+  }
+  .skeleton-scan::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to bottom,
+      transparent 0%,
+      rgba(99, 102, 241, 0.07) 40%,
+      rgba(99, 102, 241, 0.14) 50%,
+      rgba(99, 102, 241, 0.07) 60%,
+      transparent 100%
+    );
+    animation: scannerAnimation 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  }
+
+  /* ── Nav glass ── */
+  .nav-glass {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+  }
+  .dark .nav-glass {
+    background: rgba(5, 5, 7, 0.72);
+    border-bottom: 1px solid rgba(255,255,255,0.055);
+  }
+
+  /* ── Hero glow blob ── */
+  .hero-glow-blob {
+    position: absolute;
+    pointer-events: none;
+    border-radius: 50%;
+    filter: blur(120px);
+    animation: blobFloat 8s ease-in-out infinite;
+  }
+
+  /* ── Tag / pill chip ── */
+  .tag-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.3rem 0.75rem;
+    border-radius: 99px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.09);
+    color: rgba(255,255,255,0.7);
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.2s;
+    white-space: nowrap;
+    max-width: 260px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .tag-pill:hover {
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+    border-color: rgba(255,255,255,0.16);
+    transform: translateY(-1px);
+  }
+
+  /* ── Mode buttons (Word / Excel / PPT selector) ── */
+  .mode-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border: 1px solid transparent;
+    transition: all 0.22s ease;
+    white-space: nowrap;
+  }
+  .mode-btn-inactive {
+    color: #71717a;
+    background: transparent;
+  }
+  .mode-btn-inactive:hover {
+    background: rgba(255,255,255,0.05);
+    color: #d4d4d8;
+  }
+  .mode-btn-word {
+    background: rgba(129,140,248,0.15);
+    border-color: rgba(129,140,248,0.35);
+    color: #a5b4fc;
+  }
+  .mode-btn-excel {
+    background: rgba(52,211,153,0.15);
+    border-color: rgba(52,211,153,0.35);
+    color: #6ee7b7;
+  }
+  .mode-btn-ppt {
+    background: rgba(251,146,60,0.15);
+    border-color: rgba(251,146,60,0.35);
+    color: #fdba74;
+  }
+
+  /* ── Doc Type Badge ── */
+  .badge-word { background: rgba(129,140,248,0.18); color: #a5b4fc; border: 1px solid rgba(129,140,248,0.3); }
+  .badge-excel { background: rgba(52,211,153,0.18); color: #6ee7b7; border: 1px solid rgba(52,211,153,0.3); }
+  .badge-ppt { background: rgba(251,146,60,0.18); color: #fdba74; border: 1px solid rgba(251,146,60,0.3); }
+
+  /* ── Sidebar panel ── */
+  .sidebar-panel {
+    background: rgba(8, 8, 11, 0.85);
+    border-right: 1px solid rgba(255,255,255,0.055);
+  }
+
+  /* ── Stat number ── */
+  .stat-number {
+    font-family: var(--font-mono);
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1;
+    background: linear-gradient(135deg, #0f172a 0%, rgba(15,23,42,0.7) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .dark .stat-number {
+    background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.6) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* ── Feature icon wrapper ── */
+  .feature-icon {
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 0.875rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  /* ── Tip bubble in AI pane ── */
+  .tip-bubble {
+    display: block;
+    width: 100%;
+    text-align: right;
+    font-size: 0.7rem;
+    color: #71717a;
+    background: rgba(255,255,255,0.025);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 0.625rem;
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .tip-bubble:hover {
+    background: rgba(255,255,255,0.05);
+    color: #d4d4d8;
+    border-color: rgba(255,255,255,0.12);
+  }
+
+  /* ── Slide thumbnail ── */
+  .slide-thumb {
+    flex-shrink: 0;
+    width: 120px;
+    height: 68px;
+    border-radius: 0.5rem;
+    border: 2px solid rgba(255,255,255,0.06);
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.2s, transform 0.2s;
+    position: relative;
+  }
+  .slide-thumb:hover {
+    border-color: rgba(255,255,255,0.18);
+    transform: translateY(-2px);
+  }
+  .slide-thumb-active {
+    border-color: #fb923c !important;
+    box-shadow: 0 0 0 2px rgba(251,146,60,0.25);
+  }
+
+  /* ── Word page card ── */
+  .word-page {
+    background: #111116;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 1.25rem;
+    box-shadow:
+      0 25px 80px -20px rgba(0,0,0,0.9),
+      0 0 0 1px rgba(255,255,255,0.03) inset;
+  }
+}
+
+/* ─── Keyframes ────────────────────────────────────────── */
+@keyframes borderGlowAnimation {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes scannerAnimation {
+  0%   { transform: translateY(-100%); }
+  100% { transform: translateY(200%); }
+}
+
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 6px 2px rgba(52, 211, 153, 0.4); opacity: 1; }
+  50%       { box-shadow: 0 0 12px 4px rgba(52, 211, 153, 0.7); opacity: 0.8; }
+}
+
+@keyframes blobFloat {
+  0%, 100% { transform: translateY(0px) scale(1); }
+  33%       { transform: translateY(-18px) scale(1.04); }
+  66%       { transform: translateY(10px) scale(0.97); }
+}
+
+@keyframes floatUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ─── Custom animation helpers ─────────────────────────── */
+.animate-float-up  { animation: floatUp 0.55s cubic-bezier(0.16,1,0.3,1) forwards; }
+.animate-fade-in   { animation: fadeIn 0.4s ease forwards; }
+.animate-slide-right { animation: slideInRight 0.4s ease forwards; }
+.animate-blob-float { animation: blobFloat 8s ease-in-out infinite; }
+.animate-spin-slow { animation: spin-slow 8s linear infinite; }
+
+/* ─── Delay utilities ──────────────────────────────────── */
+.delay-100 { animation-delay: 0.1s; }
+.delay-150 { animation-delay: 0.15s; }
+.delay-200 { animation-delay: 0.2s; }
+.delay-300 { animation-delay: 0.3s; }
+.delay-400 { animation-delay: 0.4s; }
+
+/* ─── Custom scrollbar ─────────────────────────────────── */
+.custom-scrollbar::-webkit-scrollbar { width: 4px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 99px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.14); }
