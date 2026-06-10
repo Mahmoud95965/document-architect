@@ -195,6 +195,37 @@ function DebouncedTextarea({
   );
 }
 
+const AXIOM_UPDATES = [
+  {
+    title: "مستندات Word ذكية (RTL)",
+    description: "دعم كامل للغة العربية والـ RTL لمنع تداخل الأقواس والرموز، مع شريط جانبي Indigo فخم وتصميم جداول Word أنيقة وعصرية.",
+    icon: FileText,
+    color: "text-indigo-400 border-indigo-500/20 bg-indigo-500/10",
+    glowColor: "radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)",
+  },
+  {
+    title: "جداول Excel محاسبية",
+    description: "مظهر أخضر احترافي ونظيف، تنسيق تلقائي للعملات والآلاف، وتنسيق مزدوج (Double Underline) للإجماليات بطريقة مالية معتمدة.",
+    icon: FileSpreadsheet,
+    color: "text-emerald-400 border-emerald-500/20 bg-emerald-500/10",
+    glowColor: "radial-gradient(circle, rgba(16,185,129,0.15) 0%, transparent 70%)",
+  },
+  {
+    title: "شرائح PowerPoint سينمائية",
+    description: "تقييد الصور لـ (2) كحد أقصى، تقسيم الشريحة لأعمدة مستقلة لمنع تراكب النصوص فوق الصور، تكبير خطوط العروض، وتعتيم الكروت للقراءة المريحة.",
+    icon: Presentation,
+    color: "text-orange-400 border-orange-500/20 bg-orange-500/10",
+    glowColor: "radial-gradient(circle, rgba(249,115,22,0.15) 0%, transparent 70%)",
+  },
+  {
+    title: "واجهة متطورة وروابط مشاركة",
+    description: "روابط فريدة خاصة بكل مشروع لتسهيل مشاركته أو حفظه، مع واجهة لوحة تحكم زجاجية تفاعلية تتغير ألوانها ديناميكياً بحسب نوع المستند.",
+    icon: Sparkles,
+    color: "text-sky-400 border-sky-500/20 bg-sky-500/10",
+    glowColor: "radial-gradient(circle, rgba(14,165,233,0.15) 0%, transparent 70%)",
+  }
+];
+
 // ════════════════════════════════════════════════════════════
 //  INDEX COMPONENT
 // ════════════════════════════════════════════════════════════
@@ -239,6 +270,7 @@ function Index() {
   const [isPromptFocused, setIsPromptFocused] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showV2Modal, setShowV2Modal] = useState(false);
+  const [v2ModalSlide, setV2ModalSlide] = useState(0);
   const [projects, setProjects] = useState<SavedProject[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -1811,88 +1843,114 @@ function Index() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
               transition={{ type: "spring", duration: 0.5, bounce: 0.15 }}
-              className="relative max-w-2xl w-full rounded-3xl p-8 border border-white/10 shadow-2xl overflow-hidden bg-gradient-to-b from-[#0A0A0F]/95 to-[#050507]/98 text-right"
+              className="relative max-w-lg w-full rounded-3xl p-8 border border-white/10 shadow-2xl overflow-hidden bg-gradient-to-b from-[#0A0A0F]/95 to-[#050507]/98 text-right"
               style={{ direction: "rtl" }}
             >
               {/* Subtle background glow blobs inside modal */}
-              <div className="absolute top-0 right-0 w-[300px] h-[300px] rounded-full blur-[100px] pointer-events-none" style={{ background: "radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 70%)" }} />
-              <div className="absolute bottom-0 left-0 w-[250px] h-[250px] rounded-full blur-[90px] pointer-events-none" style={{ background: "radial-gradient(circle, rgba(16,185,129,0.06) 0%, transparent 70%)" }} />
+              <div 
+                className="absolute top-0 right-0 w-[250px] h-[250px] rounded-full blur-[90px] pointer-events-none transition-all duration-500" 
+                style={{ background: AXIOM_UPDATES[v2ModalSlide].glowColor }} 
+              />
               
               {/* Top Accent Line */}
               <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent" />
 
+              {/* Fixed/Pinned Logo at the Top */}
+              <div className="flex flex-col items-center justify-center relative z-10 pt-2 mb-6">
+                <div className="relative flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 overflow-hidden bg-[#0A0A0F] shadow-lg mb-2">
+                  <img src="/logo.jpg" alt="AXIOM Logo" className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 rounded-xl border border-white/5 pointer-events-none" />
+                </div>
+                <h3 className="text-xs font-black tracking-widest font-mono uppercase bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70">
+                  AXIOM
+                </h3>
+              </div>
+
               {/* Header */}
               <div className="text-center mb-6 relative z-10">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-indigo-500/30 text-[10px] font-bold text-indigo-400 bg-indigo-500/10 mb-3 animate-pulse">
-                  ✨ إطلاق الإصدار الجديد V2.0
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-indigo-500/30 text-[10px] font-bold text-indigo-400 bg-indigo-500/10 mb-2.5 animate-pulse">
+                  ✨ تحديثات منصة AXIOM
                 </span>
-                <h2 className="text-2xl font-black text-white leading-tight">ما الجديد في TOLZY Flow V2؟</h2>
-                <p className="text-xs text-muted-foreground mt-1.5">استمتع بأحدث التطورات الذكية لتصميم مستنداتك وعروضك التقديمية وجداولك.</p>
+                <h2 className="text-xl font-black text-white leading-tight">ما الجديد في إصدار AXIOM؟</h2>
               </div>
 
-              {/* Feature Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 my-6 relative z-10">
-                {/* Word Card */}
-                <div className="p-4 rounded-2xl border border-white/5 bg-white/[0.01] hover:border-indigo-500/20 hover:bg-indigo-500/[0.01] transition-all duration-300">
-                  <div className="flex items-center gap-2.5 mb-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-500/10 border border-indigo-500/20">
-                      <FileText className="h-4 w-4 text-indigo-400" />
+              {/* Slide Content (One News Item per slide) */}
+              <div className="relative min-h-[160px] flex items-center justify-center my-6 z-10 px-4">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={v2ModalSlide}
+                    initial={{ opacity: 0, x: 15 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -15 }}
+                    transition={{ duration: 0.25 }}
+                    className="w-full flex flex-col items-center text-center"
+                  >
+                    {/* Icon */}
+                    <div className={`flex h-14 w-14 items-center justify-center rounded-2xl mb-4 border ${AXIOM_UPDATES[v2ModalSlide].color} shadow-lg`}>
+                      {(() => {
+                        const IconComponent = AXIOM_UPDATES[v2ModalSlide].icon;
+                        return <IconComponent className="h-6 w-6" />;
+                      })()}
                     </div>
-                    <h3 className="text-xs font-bold text-white">مستندات Word ذكية (RTL)</h3>
-                  </div>
-                  <p className="text-[11px] text-muted-foreground leading-relaxed">دعم كامل للغة العربية والـ RTL لمنع تداخل الأقواس والرموز، مع شريط جانبي Indigo فخم وتصميم جداول Word أنيقة.</p>
-                </div>
 
-                {/* Excel Card */}
-                <div className="p-4 rounded-2xl border border-white/5 bg-white/[0.01] hover:border-emerald-500/20 hover:bg-emerald-500/[0.01] transition-all duration-300">
-                  <div className="flex items-center gap-2.5 mb-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-                      <FileSpreadsheet className="h-4 w-4 text-emerald-400" />
-                    </div>
-                    <h3 className="text-xs font-bold text-white">جداول Excel محاسبية</h3>
-                  </div>
-                  <p className="text-[11px] text-muted-foreground leading-relaxed">مظهر أخضر احترافي ونظيف، تنسيق تلقائي للعملات والآلاف، وتنسيق مزدوج (Double Underline) للإجماليات بطريقة مالية معتمدة.</p>
-                </div>
-
-                {/* Slides Card */}
-                <div className="p-4 rounded-2xl border border-white/5 bg-white/[0.01] hover:border-orange-500/20 hover:bg-orange-500/[0.01] transition-all duration-300">
-                  <div className="flex items-center gap-2.5 mb-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-orange-500/10 border border-orange-500/20">
-                      <Presentation className="h-4 w-4 text-orange-400" />
-                    </div>
-                    <h3 className="text-xs font-bold text-white">شرائح PowerPoint سينمائية</h3>
-                  </div>
-                  <p className="text-[11px] text-muted-foreground leading-relaxed">تقييد الصور لـ (2) كحد أقصى، تقسيم الشريحة لأعمدة مستقلة لمنع تراكب النصوص فوق الصور، تكبير خطوط العروض، وتعتيم الكروت للقراءة المريحة.</p>
-                </div>
-
-                {/* Share/Routing Card */}
-                <div className="p-4 rounded-2xl border border-white/5 bg-white/[0.01] hover:border-sky-500/20 hover:bg-sky-500/[0.01] transition-all duration-300">
-                  <div className="flex items-center gap-2.5 mb-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-sky-500/10 border border-sky-500/20">
-                      <Sparkles className="h-4 w-4 text-sky-400" />
-                    </div>
-                    <h3 className="text-xs font-bold text-white">واجهة متطورة وروابط مشاركة</h3>
-                  </div>
-                  <p className="text-[11px] text-muted-foreground leading-relaxed">روابط فريدة خاصة بكل مشروع لتسهيل مشاركته أو حفظه، مع واجهة لوحة تحكم زجاجية تفاعلية تتغير ألوانها ديناميكياً بحسب نوع المستند.</p>
-                </div>
+                    {/* Slide Title */}
+                    <h3 className="text-base font-bold text-white mb-2">{AXIOM_UPDATES[v2ModalSlide].title}</h3>
+                    
+                    {/* Slide Description */}
+                    <p className="text-xs leading-relaxed max-w-sm text-[#a1a1b5]">
+                      {AXIOM_UPDATES[v2ModalSlide].description}
+                    </p>
+                  </motion.div>
+                </AnimatePresence>
               </div>
 
-              {/* Action */}
-              <div className="flex justify-center mt-6 relative z-10">
-                <button
-                  onClick={() => {
-                    localStorage.setItem("tolzy_v2_dismissed", "true");
-                    setShowV2Modal(false);
-                  }}
-                  className="px-8 py-3 flex items-center justify-center gap-2 rounded-2xl text-xs font-bold text-[#050507] transition-all btn-shimmer active:scale-95 cursor-pointer"
-                  style={{
-                    background: "linear-gradient(135deg, #fff 0%, #e8e8ff 100%)",
-                    boxShadow: "0 10px 25px -5px rgba(99,102,241,0.35)"
-                  }}
-                >
-                  <Sparkles className="h-4 w-4 text-indigo-600" />
-                  ابدأ استكشاف TOLZY V2.0
-                </button>
+              {/* Progress dots */}
+              <div className="flex justify-center gap-1.5 mb-6 relative z-10">
+                {AXIOM_UPDATES.map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setV2ModalSlide(idx)}
+                    className={`h-1.5 rounded-full transition-all duration-300 ${idx === v2ModalSlide ? "w-6 bg-indigo-500" : "w-1.5 bg-white/25 hover:bg-white/40"}`}
+                  />
+                ))}
+              </div>
+
+              {/* Action buttons at the bottom */}
+              <div className="flex items-center justify-between mt-6 relative z-10 border-t border-white/5 pt-4">
+                <div className="flex w-full items-center justify-between" style={{ direction: "rtl" }}>
+                  {v2ModalSlide > 0 ? (
+                    <button
+                      onClick={() => setV2ModalSlide(v => v - 1)}
+                      className="px-4 py-2 flex items-center justify-center gap-1.5 rounded-xl text-xs font-semibold text-white/70 border border-white/10 hover:border-white/20 hover:text-white bg-white/5 transition-all cursor-pointer"
+                    >
+                      <ChevronRight className="h-3.5 w-3.5" />
+                      السابق
+                    </button>
+                  ) : (
+                    <div />
+                  )}
+
+                  {v2ModalSlide < AXIOM_UPDATES.length - 1 ? (
+                    <button
+                      onClick={() => setV2ModalSlide(v => v + 1)}
+                      className="px-5 py-2 flex items-center justify-center gap-1.5 rounded-xl text-xs font-bold text-[#050507] bg-white hover:bg-indigo-50/90 hover:scale-102 active:scale-98 transition-all cursor-pointer"
+                    >
+                      التالي
+                      <ChevronLeft className="h-3.5 w-3.5" />
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        localStorage.setItem("tolzy_v2_dismissed", "true");
+                        setShowV2Modal(false);
+                      }}
+                      className="px-5 py-2 flex items-center justify-center gap-1.5 rounded-xl text-xs font-bold text-[#050507] bg-indigo-500 hover:bg-indigo-400 hover:scale-102 active:scale-98 transition-all cursor-pointer text-white shadow-[0_0_20px_rgba(99,102,241,0.4)]"
+                    >
+                      <Sparkles className="h-3.5 w-3.5 text-white" />
+                      ابدأ استكشاف AXIOM
+                    </button>
+                  )}
+                </div>
               </div>
             </motion.div>
           </div>
