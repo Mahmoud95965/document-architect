@@ -10,8 +10,10 @@ export const Route = createFileRoute("/login")({
   component: LoginPage,
   head: () => ({
     meta: [
-      { title: "تسجيل الدخول — TOLZY Flow" },
-      { name: "description", content: "سجّل دخولك للوصول إلى TOLZY Flow." },
+      { title: "تسجيل الدخول — AXIOM Flow" },
+      { name: "description", content: "سجّل دخولك إلى منصة AXIOM لتوليد وتصميم المستندات والشرائح الذكية بالذكاء الاصطناعي." },
+      { property: "og:title", content: "تسجيل الدخول — AXIOM Flow" },
+      { property: "og:description", content: "سجّل دخولك للوصول إلى منصة AXIOM لتوليد ملفات Word وExcel وPowerPoint بالذكاء الاصطناعي." },
     ],
   }),
 });

@@ -34,12 +34,18 @@ export const Route = createFileRoute("/")({
   component: Index,
   head: () => ({
     meta: [
-      { title: "TOLZY Flow — AI Document & Presentation Architect" },
+      { title: "AXIOM Flow — منصة توليد المستندات والشرائح بالذكاء الاصطناعي" },
       {
         name: "description",
         content:
-          "Turn raw notes into Word documents, Excel spreadsheets and PowerPoint presentations. AI-crafted structure, instant download.",
+          "صمم مستندات Word، وجداول Excel المحاسبية، وعروض PowerPoint التفاعلية في ثوانٍ. محرك AXIOM الذكي يدعم التنسيق المالي المعتمد واللغة العربية بشكل كامل.",
       },
+      {
+        name: "keywords",
+        content: "توليد ملفات بالذكاء الاصطناعي, بوربوينت بالذكاء الاصطناعي, إكسل تلقائي, وورد عربي, AXIOM Flow, AI Document Creator",
+      },
+      { property: "og:title", content: "AXIOM Flow — AI Document & Presentation Generator" },
+      { property: "og:description", content: "توليد وتصميم ملفات Word وExcel وPowerPoint بالذكاء الاصطناعي مع دعم كامل للغة العربية والتنسيق المحاسبي المتقدم." },
     ],
   }),
 });

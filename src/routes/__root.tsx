@@ -77,18 +77,22 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "TOLZY Flow — AI Document & Presentation Architect" },
+      { title: "AXIOM Flow — توليد وتصميم المستندات والشرائح بالذكاء الاصطناعي (Word, Excel, PPT)" },
       {
         name: "description",
         content:
-          "حوّل أفكارك إلى مستندات Word واكسل وعروض PowerPoint احترافية في ثوانٍ بقوة الذكاء الاصطناعي.",
+          "حوّل أفكارك إلى مستندات Word احترافية، جداول Excel محاسبية، وعروض PowerPoint سينمائية تفاعلية في ثوانٍ بقوة محرك الذكاء الاصطناعي AXIOM Flow.",
       },
-      { name: "author", content: "TOLZY Labs" },
-      { property: "og:title", content: "TOLZY Flow — AI Document Architect" },
-      { property: "og:description", content: "Instantly build Word, Excel & PowerPoint files with AI." },
+      {
+        name: "keywords",
+        content: "AXIOM Flow, توليد مستندات بالذكاء الاصطناعي, تصميم بوربوينت تلقائي, إكسل محاسبي بالذكاء الاصطناعي, وورد عربي بالذكاء الاصطناعي, AI document generator, Word Excel PowerPoint AI creator",
+      },
+      { name: "author", content: "AXIOM Labs" },
+      { property: "og:title", content: "AXIOM Flow — AI Word, Excel & PowerPoint Generator" },
+      { property: "og:description", content: "قم بتصميم وتوليد ملفات Word وExcel وPowerPoint تلقائياً بالذكاء الاصطناعي مع دعم كامل للغة العربية والتنسيقات المحاسبية الرسمية." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@TOLZYLabs" },
+      { name: "twitter:site", content: "@AXIOMLabs" },
       { name: "theme-color", content: "#050507" },
     ],
     links: [
