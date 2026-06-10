@@ -10,80 +10,64 @@ import type {
   KpiBlockElement,
   AccentShapeElement,
   DividerLineElement,
+  SvgChartElement,
 } from "./generate.functions";
 import { isProjectArabic } from "./lang";
 
 // ─────────────────────────────────────────────────────────────
 //  EXPANDED IMAGE LIBRARY  (topic-keyed Unsplash fallbacks)
 // ─────────────────────────────────────────────────────────────
-const IMAGE_MAP: Record<string, string> = {
-  // Business / Finance
-  corporate:    "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1400&auto=format&fit=crop&q=85",
-  business:     "https://images.unsplash.com/photo-1664575602554-2087b04935a5?w=1400&auto=format&fit=crop&q=85",
-  finance:      "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1400&auto=format&fit=crop&q=85",
-  investment:   "https://images.unsplash.com/photo-1559526324-593bc073d938?w=1400&auto=format&fit=crop&q=85",
-  economy:      "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1400&auto=format&fit=crop&q=85",
-  market:       "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1400&auto=format&fit=crop&q=85",
-  revenue:      "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=1400&auto=format&fit=crop&q=85",
-  budget:       "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=1400&auto=format&fit=crop&q=85",
-  growth:       "https://images.unsplash.com/photo-1543286386-2e659306cd6c?w=1400&auto=format&fit=crop&q=85",
-  profit:       "https://images.unsplash.com/photo-1543286386-2e659306cd6c?w=1400&auto=format&fit=crop&q=85",
-  // Technology
-  tech:         "https://images.unsplash.com/photo-1518770660439-4636190af475?w=1400&auto=format&fit=crop&q=85",
-  technology:   "https://images.unsplash.com/photo-1518770660439-4636190af475?w=1400&auto=format&fit=crop&q=85",
-  digital:      "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=1400&auto=format&fit=crop&q=85",
-  ai:           "https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=1400&auto=format&fit=crop&q=85",
-  software:     "https://images.unsplash.com/photo-1587620962725-abab19836bd2?w=1400&auto=format&fit=crop&q=85",
-  code:         "https://images.unsplash.com/photo-1587620962725-abab19836bd2?w=1400&auto=format&fit=crop&q=85",
-  data:         "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1400&auto=format&fit=crop&q=85",
-  cloud:        "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=1400&auto=format&fit=crop&q=85",
-  cyber:        "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=1400&auto=format&fit=crop&q=85",
-  // People / Teams
-  team:         "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1400&auto=format&fit=crop&q=85",
-  people:       "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=1400&auto=format&fit=crop&q=85",
-  leadership:   "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=1400&auto=format&fit=crop&q=85",
-  management:   "https://images.unsplash.com/photo-1576267423048-15c0040fec78?w=1400&auto=format&fit=crop&q=85",
-  // Real Estate
-  real:         "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=1400&auto=format&fit=crop&q=85",
-  estate:       "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=1400&auto=format&fit=crop&q=85",
-  property:     "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=1400&auto=format&fit=crop&q=85",
-  building:     "https://images.unsplash.com/photo-1486325212027-8081e485255e?w=1400&auto=format&fit=crop&q=85",
-  architecture: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1400&auto=format&fit=crop&q=85",
-  city:         "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=1400&auto=format&fit=crop&q=85",
-  // Healthcare
-  health:       "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=1400&auto=format&fit=crop&q=85",
-  medical:      "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=1400&auto=format&fit=crop&q=85",
-  hospital:     "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=1400&auto=format&fit=crop&q=85",
-  // Education
-  education:    "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=1400&auto=format&fit=crop&q=85",
-  learning:     "https://images.unsplash.com/photo-1509062522246-3755977927d7?w=1400&auto=format&fit=crop&q=85",
-  university:   "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=1400&auto=format&fit=crop&q=85",
-  // Nature / Environment
-  nature:       "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=1400&auto=format&fit=crop&q=85",
-  environment:  "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=1400&auto=format&fit=crop&q=85",
-  green:        "https://images.unsplash.com/photo-1473448912268-2022ce9509d8?w=1400&auto=format&fit=crop&q=85",
-  energy:       "https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?w=1400&auto=format&fit=crop&q=85",
-  // Marketing / Creative
-  marketing:    "https://images.unsplash.com/photo-1432888498266-38ffec3eaf0a?w=1400&auto=format&fit=crop&q=85",
-  social:       "https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=1400&auto=format&fit=crop&q=85",
-  creative:     "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1400&auto=format&fit=crop&q=85",
-  design:       "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1400&auto=format&fit=crop&q=85",
-  strategy:     "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1400&auto=format&fit=crop&q=85",
-  // Travel / Logistics
-  travel:       "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=1400&auto=format&fit=crop&q=85",
-  logistics:    "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=1400&auto=format&fit=crop&q=85",
-  supply:       "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=1400&auto=format&fit=crop&q=85",
-  // Default
-  default:      "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=1400&auto=format&fit=crop&q=85",
-  cover:        "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=1400&auto=format&fit=crop&q=85",
-};
+const KEYWORD_MAP = [
+  {
+    keys: ["corporate", "business", "company", "مؤسسة", "شركة", "شركات", "عمل"],
+    url: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1400&auto=format&fit=crop&q=85"
+  },
+  {
+    keys: ["finance", "investment", "economy", "market", "revenue", "budget", "profit", "growth", "مال", "استثمار", "اقتصاد", "ميزانية", "أرباح", "تمويل", "نمو"],
+    url: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1400&auto=format&fit=crop&q=85"
+  },
+  {
+    keys: ["tech", "technology", "digital", "ai", "software", "code", "cloud", "cyber", "data", "تقنية", "تكنولوجيا", "ذكاء", "برمجة", "سحابي", "بيانات", "رقمي", "برمجيات"],
+    url: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=1400&auto=format&fit=crop&q=85"
+  },
+  {
+    keys: ["team", "people", "leadership", "management", "فريق", "إدارة", "قيادة", "ناس", "موظفين"],
+    url: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1400&auto=format&fit=crop&q=85"
+  },
+  {
+    keys: ["real", "estate", "property", "building", "architecture", "city", "عقار", "عقارات", "بناء", "معمار", "مدينة", "شقة", "برج"],
+    url: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=1400&auto=format&fit=crop&q=85"
+  },
+  {
+    keys: ["health", "medical", "hospital", "صحة", "طبي", "مستشفى", "علاج"],
+    url: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=1400&auto=format&fit=crop&q=85"
+  },
+  {
+    keys: ["education", "learning", "university", "school", "تعليم", "دراسة", "جامعة", "مدرسة", "تعلم"],
+    url: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=1400&auto=format&fit=crop&q=85"
+  },
+  {
+    keys: ["nature", "environment", "green", "energy", "طبيعة", "بيئة", "طاقة", "خضراء"],
+    url: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=1400&auto=format&fit=crop&q=85"
+  },
+  {
+    keys: ["marketing", "social", "creative", "design", "strategy", "تسويق", "إعلان", "تصميم", "إبداع", "استراتيجية"],
+    url: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1400&auto=format&fit=crop&q=85"
+  },
+  {
+    keys: ["travel", "logistics", "supply", "سفر", "شحن", "نقل", "لوجستيات"],
+    url: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=1400&auto=format&fit=crop&q=85"
+  }
+];
 
 export function getUnsplashImageUrl(query = ""): string {
   const q = query.toLowerCase();
-  for (const [key, url] of Object.entries(IMAGE_MAP)) {
-    if (q.includes(key)) return url;
+  for (const entry of KEYWORD_MAP) {
+    if (entry.keys.some(key => q.includes(key))) {
+      return entry.url;
+    }
   }
-  return IMAGE_MAP.default;
+  return "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=1400&auto=format&fit=crop&q=85"; // default
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -143,7 +127,7 @@ function renderElement(
       const e = el as HeroTextElement;
       slide.addText(e.text, {
         x: safeX, y: safeY, w: safeW, h: safeH,
-        fontSize: e.fontSize && e.fontSize > 40 ? 38 : (e.fontSize || 38),
+        fontSize: e.fontSize && e.fontSize > 65 ? 44 : (e.fontSize || 44),
         bold: true,
         color: toHex(e.color, "#FFFFFF"),
         fontFace, align, rtlMode,
@@ -158,9 +142,9 @@ function renderElement(
       const e = el as SubtextElement;
       slide.addText(e.text, {
         x: safeX, y: safeY, w: safeW, h: safeH,
-        fontSize: e.fontSize ?? 14,
+        fontSize: e.fontSize ?? 16,
         bold: false,
-        color: toHex(e.color, "#94A3B8"),
+        color: toHex(e.color, "#CBD5E1"), // brighter subtext color for premium contrast
         fontFace, align, rtlMode,
         fit: "shrink",
       });
@@ -174,7 +158,7 @@ function renderElement(
       // طبقة التعتيم (Dark Scrim) خلف الكارت مباشرة
       slide.addShape(pptx.ShapeType.roundRect, {
         x: safeX, y: safeY, w: safeW, h: safeH,
-        fill: { color: "000000", transparency: 60 },
+        fill: { color: "0B0F19", transparency: 22 }, // opaque deep slate background for perfect legibility
         line: { color: accentHex, width: 1.5, transparency: 30 },
         rectRadius: 0.2,
       });
@@ -271,6 +255,49 @@ function renderElement(
       slide.addShape(pptx.ShapeType.rect, {
         x: safeX, y: safeY, w: safeW, h: Math.max(safeH, 0.025),
         fill: { color: toHex(e.color, "#334155") },
+      });
+      break;
+    }
+
+    // ── SVG Chart ─────────────────────────────────────────────
+    case "svg_chart": {
+      const e = el as SvgChartElement;
+      
+      const type = e.chartType === "bar" ? pptx.ChartType.bar :
+                   e.chartType === "line" ? pptx.ChartType.line :
+                   e.chartType === "pie" ? pptx.ChartType.pie :
+                   e.chartType === "area" ? pptx.ChartType.area : pptx.ChartType.bar;
+      
+      const labels = e.data.map(d => d.label);
+      const values = e.data.map(d => Number(d.value) || 0);
+      const chartColors = e.data.map(d => toHex(d.color || `#${accentHex}`, "6366F1"));
+
+      const chartData = [{
+        name: e.title || "Data",
+        labels,
+        values,
+      }];
+
+      slide.addChart(type, chartData, {
+        x: safeX,
+        y: safeY,
+        w: safeW,
+        h: safeH,
+        chartColors,
+        showValue: true,
+        dataLabelFontFace: fontFace,
+        dataLabelFontSize: 9,
+        dataLabelColor: "FFFFFF",
+        valAxisLabelFontFace: fontFace,
+        valAxisLabelFontSize: 8,
+        catAxisLabelFontFace: fontFace,
+        catAxisLabelFontSize: 8,
+        titleFontFace: fontFace,
+        titleFontSize: 12,
+        titleColor: "FFFFFF",
+        showTitle: !!e.title,
+        title: e.title || "",
+        barDir: e.chartType === "bar" ? "col" : undefined,
       });
       break;
     }
@@ -454,7 +481,7 @@ export async function generateAndDownloadPptx(
   pptx.layout = "LAYOUT_16x9";
 
   const isArabic = isProjectArabic(data as any);
-  const fontFace = "Calibri";
+  const fontFace = isArabic ? "Cairo" : "Calibri";
 
   // ── Cover ──
   buildCoverSlide(pptx, data, isArabic, fontFace);

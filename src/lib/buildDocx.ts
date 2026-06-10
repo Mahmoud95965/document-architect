@@ -19,9 +19,8 @@ const { saveAs } = fileSaver;
 import type { DocJSON } from "./generate.functions";
 import { isProjectArabic } from "./lang";
 
-const FONT = "Calibri";
-const NAVY = "1E3A8A";
-const CHARCOAL = "374151";
+const INDIGO = "4F46E5";
+const CHARCOAL = "4B5563";
 const BODY = "1F2937";
 const BORDER = "E5E7EB";
 const ZEBRA = "F9FAFB";
@@ -29,9 +28,13 @@ const ZEBRA = "F9FAFB";
 const border = { style: BorderStyle.SINGLE, size: 4, color: BORDER };
 const cellBorders = { top: border, bottom: border, left: border, right: border };
 
-function buildTable(table: { headers: string[]; rows: string[][] }, isArabic: boolean) {
+function buildTable(
+  table: { headers: string[]; rows: string[][] },
+  isArabic: boolean,
+  fontFace: string
+) {
   const cols = table.headers.length || 1;
-  const totalWidth = 9360;
+  const totalWidth = 9360; // Standard page printable width in DXA
   const colWidth = Math.floor(totalWidth / cols);
   const columnWidths = Array(cols).fill(colWidth);
 
@@ -49,13 +52,21 @@ function buildTable(table: { headers: string[]; rows: string[][] }, isArabic: bo
         new TableCell({
           borders: cellBorders,
           width: { size: colWidth, type: WidthType.DXA },
-          shading: { fill: NAVY, type: ShadingType.CLEAR, color: "auto" },
-          margins: { top: 140, bottom: 140, left: 160, right: 160 },
+          shading: { fill: INDIGO, type: ShadingType.CLEAR, color: "auto" },
+          margins: { top: 160, bottom: 160, left: 180, right: 180 }, // Premium padding
           children: [
             new Paragraph({
               alignment: isArabic ? AlignmentType.RIGHT : AlignmentType.LEFT,
+              bidirectional: isArabic,
               children: [
-                new TextRun({ text: h, bold: true, color: "FFFFFF", font: FONT, size: 22, }),
+                new TextRun({
+                  text: h,
+                  bold: true,
+                  color: "FFFFFF",
+                  font: fontFace,
+                  size: 20,
+                  rightToLeft: isArabic,
+                }),
               ],
             }),
           ],
@@ -75,11 +86,20 @@ function buildTable(table: { headers: string[]; rows: string[][] }, isArabic: bo
               i % 2 === 1
                 ? { fill: ZEBRA, type: ShadingType.CLEAR, color: "auto" }
                 : undefined,
-            margins: { top: 120, bottom: 120, left: 160, right: 160 },
+            margins: { top: 140, bottom: 140, left: 180, right: 180 },
             children: [
               new Paragraph({
                 alignment: isArabic ? AlignmentType.RIGHT : AlignmentType.LEFT,
-                children: [new TextRun({ text, font: FONT, size: 22, color: BODY, })],
+                bidirectional: isArabic,
+                children: [
+                  new TextRun({
+                    text,
+                    font: fontFace,
+                    size: 20,
+                    color: BODY,
+                    rightToLeft: isArabic,
+                  }),
+                ],
               }),
             ],
           });
@@ -96,18 +116,45 @@ function buildTable(table: { headers: string[]; rows: string[][] }, isArabic: bo
 
 export async function generateAndDownloadDocx(data: DocJSON, fileName = "document.docx") {
   const isArabic = isProjectArabic(data);
+  const fontFace = isArabic ? "Cairo" : "Segoe UI";
+  
   const headingAlignment = isArabic ? AlignmentType.RIGHT : AlignmentType.LEFT;
   const paragraphAlignment = isArabic ? AlignmentType.RIGHT : AlignmentType.JUSTIFIED;
 
   const children: (Paragraph | Table)[] = [];
+
+  // Elegant top header band instead of raw text title to look premium
+  children.push(
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { before: 100, after: 100 },
+      children: [
+        new TextRun({
+          text: "— REPORT & ANALYTICS —",
+          bold: true,
+          color: INDIGO,
+          size: 18,
+          font: fontFace,
+        }),
+      ],
+    })
+  );
 
   // Document Title
   children.push(
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { before: 240, after: 120 },
+      bidirectional: isArabic,
       children: [
-        new TextRun({ text: data.title, bold: true, color: NAVY, size: 48, font: FONT, }),
+        new TextRun({
+          text: data.title,
+          bold: true,
+          color: INDIGO,
+          size: 44, // 22pt
+          font: fontFace,
+          rightToLeft: isArabic,
+        }),
       ],
     })
   );
@@ -118,8 +165,16 @@ export async function generateAndDownloadDocx(data: DocJSON, fileName = "documen
       new Paragraph({
         alignment: AlignmentType.CENTER,
         spacing: { after: 480 },
+        bidirectional: isArabic,
         children: [
-          new TextRun({ text: data.subtitle, color: CHARCOAL, size: 24, font: FONT, italics: true, }),
+          new TextRun({
+            text: data.subtitle,
+            color: CHARCOAL,
+            size: 24, // 12pt
+            font: fontFace,
+            italics: true,
+            rightToLeft: isArabic,
+          }),
         ],
       })
     );
@@ -127,16 +182,36 @@ export async function generateAndDownloadDocx(data: DocJSON, fileName = "documen
     children.push(new Paragraph({ spacing: { after: 360 }, children: [] }));
   }
 
+  // Horizontal divider line
+  children.push(
+    new Paragraph({
+      spacing: { after: 360 },
+      border: { bottom: { color: BORDER, size: 8, style: BorderStyle.SINGLE } },
+      children: [],
+    })
+  );
+
   // Sections
   data.sections.forEach((section, idx) => {
-    // Heading 1
+    // Heading 1 with elegant vertical accent bar (left in LTR, right in RTL)
     children.push(
       new Paragraph({
         heading: HeadingLevel.HEADING_1,
         alignment: headingAlignment,
-        spacing: { before: idx === 0 ? 0 : 360, after: 160 },
+        bidirectional: isArabic,
+        spacing: { before: idx === 0 ? 0 : 400, after: 160 },
+        borders: isArabic
+          ? { right: { color: INDIGO, size: 24, style: BorderStyle.SINGLE, space: 10 } }
+          : { left: { color: INDIGO, size: 24, style: BorderStyle.SINGLE, space: 10 } },
         children: [
-          new TextRun({ text: section.heading, bold: true, color: NAVY, size: 32, font: FONT, }),
+          new TextRun({
+            text: ` ${section.heading}`,
+            bold: true,
+            color: INDIGO,
+            size: 28, // 14pt
+            font: fontFace,
+            rightToLeft: isArabic,
+          }),
         ],
       })
     );
@@ -147,37 +222,54 @@ export async function generateAndDownloadDocx(data: DocJSON, fileName = "documen
         new Paragraph({
           heading: HeadingLevel.HEADING_2,
           alignment: headingAlignment,
-          spacing: { before: 80, after: 120 },
+          bidirectional: isArabic,
+          spacing: { before: 120, after: 120 },
           children: [
-            new TextRun({ text: section.subheading, bold: true, color: CHARCOAL, size: 26, font: FONT, }),
+            new TextRun({
+              text: section.subheading,
+              bold: true,
+              color: CHARCOAL,
+              size: 24, // 12pt
+              font: fontFace,
+              rightToLeft: isArabic,
+            }),
           ],
         })
       );
     }
 
-    // Paragraphs
+    // Paragraphs with proper line spacing and bidirectional settings
     (section.paragraphs ?? []).forEach((p) =>
       children.push(
         new Paragraph({
           alignment: paragraphAlignment,
-          spacing: { after: 160, line: 276 }, // 1.15 line spacing
-          children: [new TextRun({ text: p, color: BODY, size: 23, font: FONT, })],
+          bidirectional: isArabic,
+          spacing: { after: 160, line: 312 }, // 1.3 line spacing (very readable)
+          children: [
+            new TextRun({
+              text: p,
+              color: BODY,
+              size: 22, // 11pt
+              font: fontFace,
+              rightToLeft: isArabic,
+            }),
+          ],
         })
       )
     );
 
     // Table
     if (section.table && section.table.headers?.length) {
-      children.push(new Paragraph({ spacing: { after: 120 }, children: [] }));
-      children.push(buildTable(section.table, isArabic));
-      children.push(new Paragraph({ spacing: { after: 120 }, children: [] }));
+      children.push(new Paragraph({ spacing: { after: 160 }, children: [] }));
+      children.push(buildTable(section.table, isArabic, fontFace));
+      children.push(new Paragraph({ spacing: { after: 240 }, children: [] }));
     }
   });
 
   const doc = new Document({
     styles: {
       default: {
-        document: { run: { font: FONT, size: 23 } },
+        document: { run: { font: fontFace, size: 22 } },
       },
     },
     numbering: { config: [] },
@@ -185,8 +277,8 @@ export async function generateAndDownloadDocx(data: DocJSON, fileName = "documen
       {
         properties: {
           page: {
-            size: { width: 12240, height: 15840 },
-            margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 },
+            size: { width: 12240, height: 15840 }, // A4 width/height in dxa
+            margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 }, // 1 inch margins
           },
         },
         footers: {
@@ -195,10 +287,10 @@ export async function generateAndDownloadDocx(data: DocJSON, fileName = "documen
               new Paragraph({
                 alignment: AlignmentType.CENTER,
                 children: [
-                  new TextRun({ text: "Page ", color: CHARCOAL, size: 18, font: FONT }),
-                  new TextRun({ children: [PageNumber.CURRENT], color: CHARCOAL, size: 18, font: FONT }),
-                  new TextRun({ text: " of ", color: CHARCOAL, size: 18, font: FONT }),
-                  new TextRun({ children: [PageNumber.TOTAL_PAGES], color: CHARCOAL, size: 18, font: FONT }),
+                  new TextRun({ text: "Page ", color: CHARCOAL, size: 18, font: fontFace }),
+                  new TextRun({ children: [PageNumber.CURRENT], color: CHARCOAL, size: 18, font: fontFace }),
+                  new TextRun({ text: " of ", color: CHARCOAL, size: 18, font: fontFace }),
+                  new TextRun({ children: [PageNumber.TOTAL_PAGES], color: CHARCOAL, size: 18, font: fontFace }),
                 ],
               }),
             ],

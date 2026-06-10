@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FileText, Sparkles, Download, ArrowRight, Trash2, Plus,
@@ -21,10 +21,16 @@ import {
 import { generateAndDownloadDocx } from "@/lib/buildDocx";
 import { generateAndDownloadExcel } from "@/lib/buildExcel";
 import { generateAndDownloadPptx, getUnsplashImageUrl } from "@/lib/buildPptx";
-import { getProjects, saveProject, deleteProject, type SavedProject } from "@/lib/projects";
+import { getProjects, getProject, saveProject, deleteProject, type SavedProject } from "@/lib/projects";
 import { isProjectArabic } from "@/lib/lang";
+import { z } from "zod";
+
+const searchSchema = z.object({
+  projectId: z.string().optional(),
+});
 
 export const Route = createFileRoute("/")({
+  validateSearch: (search) => searchSchema.parse(search),
   component: Index,
   head: () => ({
     meta: [
@@ -217,16 +223,22 @@ function Index() {
   } = useAuth();
   const navigate = useNavigate();
 
-  // Redirect unauthenticated users to /login
+  // Redirect unauthenticated or non-pro users to /login
   useEffect(() => {
-    if (!authLoading && !user) {
-      navigate({ to: "/login" });
+    if (!authLoading) {
+      if (!user || plan !== "pro") {
+        navigate({ to: "/login" });
+      }
     }
-  }, [authLoading, user, navigate]);
+  }, [authLoading, user, plan, navigate]);
+
+  const { projectId } = Route.useSearch();
 
   const [mode,   setMode]   = useState<DocMode>("word");
   const [prompt, setPrompt] = useState("");
+  const [isPromptFocused, setIsPromptFocused] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showV2Modal, setShowV2Modal] = useState(false);
   const [projects, setProjects] = useState<SavedProject[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -240,7 +252,28 @@ function Index() {
   useEffect(() => {
     document.documentElement.classList.add("dark");
     setProjects(getProjects());
+    
+    const hasSeenV2 = localStorage.getItem("tolzy_v2_dismissed");
+    if (!hasSeenV2) {
+      setShowV2Modal(true);
+    }
   }, []);
+
+  useEffect(() => {
+    if (projectId) {
+      const proj = getProject(projectId);
+      if (proj) {
+        if (!activeProject || activeProject.id !== projectId) {
+          setActiveProject(proj);
+        }
+      } else {
+        navigate({ search: { projectId: undefined } });
+        setActiveProject(null);
+      }
+    } else {
+      setActiveProject(null);
+    }
+  }, [projectId]);
 
   useEffect(() => {
     setActiveSheetIdx(0);
@@ -378,7 +411,7 @@ function Index() {
       await incrementDailyFiles();
 
       setProjects(getProjects());
-      setActiveProject(proj);
+      navigate({ search: { projectId: proj.id } });
       toast.success("تم التصميم بنجاح!");
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : "حدث خطأ");
@@ -468,7 +501,7 @@ function Index() {
   function handleDeleteProject(id: string, e: React.MouseEvent) {
     e.stopPropagation();
     setProjects(deleteProject(id));
-    if (activeProject?.id === id) setActiveProject(null);
+    if (activeProject?.id === id) navigate({ search: { projectId: undefined } });
     toast.success("تم الحذف.");
   }
 
@@ -601,15 +634,15 @@ function Index() {
           {/* Left: Back + Breadcrumb */}
           <div className="flex items-center gap-3 min-w-0">
             <button
-              onClick={() => { saveProject(activeProject); setActiveProject(null); setProjects(getProjects()); }}
+              onClick={() => { saveProject(activeProject); navigate({ search: { projectId: undefined } }); setProjects(getProjects()); }}
               className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground dark:text-white glass px-3 py-1.5 rounded-xl transition-all hover:border-white/12 shrink-0"
             >
-              <ChevronLeft className="h-3.5 w-3.5" />
+              <ChevronLeft className="h-3.5 w-3.5 rtl:rotate-180" />
               <span className="hidden sm:inline">الرئيسية</span>
             </button>
 
             <div className="flex items-center gap-1.5 text-muted-foreground shrink-0">
-              <ChevronRight className="h-3 w-3" />
+              <ChevronRight className="h-3 w-3 rtl:rotate-180" />
             </div>
 
             <div className="flex items-center gap-2.5 min-w-0 glass px-3 py-1.5 rounded-xl border border-white/6">
@@ -1113,9 +1146,12 @@ function Index() {
                         initial={{ opacity: 0, scale: 0.97 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ duration: 0.28, ease: "easeOut" }}
-                        className="relative w-full max-w-[840px] aspect-[16/9] rounded-2xl shadow-2xl overflow-hidden border border-white/6"
+                        className="relative w-full max-w-[1024px] aspect-[16/9] rounded-2xl shadow-2xl overflow-hidden border border-white/6"
                         dir={containerDirection}
-                        style={{ boxShadow: "0 40px 120px -30px rgba(0,0,0,0.95), 0 0 0 1px rgba(255,255,255,0.04) inset" }}
+                        style={{
+                          boxShadow: "0 40px 120px -30px rgba(0,0,0,0.95), 0 0 0 1px rgba(255,255,255,0.04) inset",
+                          containerType: "inline-size"
+                        }}
                       >
                         {/* Background image */}
                         {bgUrl ? (
@@ -1136,16 +1172,14 @@ function Index() {
 
                         {/* Elements preview */}
                         <div className="absolute inset-0 p-4">
-                          {/* Canvas ratio helper: 840px wide = 13.33in, so 1in ≈ 63px */}
+                          {/* Canvas ratio helper: percentage-based positioning */}
                           {(activeSlide.elements || []).map((el, ei) => {
-                            const SCALE = 840 / 13.33; // px per inch in preview
-                            const H_SCALE = (840 * 9/16) / 7.5;
                             const style: React.CSSProperties = {
                               position: "absolute",
-                              left: `${el.x * SCALE}px`,
-                              top: `${el.y * H_SCALE}px`,
-                              width: `${el.w * SCALE}px`,
-                              height: `${el.h * H_SCALE}px`,
+                              left: `${(el.x / 13.33) * 100}%`,
+                              top: `${(el.y / 7.5) * 100}%`,
+                              width: `${(el.w / 13.33) * 100}%`,
+                              height: `${(el.h / 7.5) * 100}%`,
                               overflow: "hidden",
                             };
 
@@ -1153,7 +1187,7 @@ function Index() {
                               return (
                                 <div key={ei} style={{ ...style, display: "flex", alignItems: "center" }}>
                                   <span style={{
-                                    fontSize: `${(el.fontSize ?? 40) * (SCALE / 96)}px`,
+                                    fontSize: `${(el.fontSize ?? 44) / 12.8}cqw`,
                                     fontWeight: 800,
                                     color: el.color || "#FFFFFF",
                                     lineHeight: 1.15,
@@ -1170,8 +1204,8 @@ function Index() {
                               return (
                                 <div key={ei} style={{ ...style, display: "flex", alignItems: "center" }}>
                                   <span style={{
-                                    fontSize: `${(el.fontSize ?? 14) * (SCALE / 96)}px`,
-                                    color: el.color || "#94A3B8",
+                                    fontSize: `${(el.fontSize ?? 16) / 12.8}cqw`,
+                                    color: el.color || "#CBD5E1",
                                     lineHeight: 1.55,
                                     direction: isArabic ? "rtl" : "ltr",
                                   }}>
@@ -1185,23 +1219,23 @@ function Index() {
                               return (
                                 <div key={ei} style={{
                                   ...style,
-                                  background: "rgba(13,17,23,0.72)",
+                                  background: "rgba(11,15,25,0.92)", // opaque background for perfect contrast
                                   backdropFilter: "blur(12px)",
                                   border: `1px solid ${accentColor}55`,
                                   borderRadius: "10px",
                                   borderTop: `2px solid ${accentColor}`,
-                                  padding: "8px 10px",
+                                  padding: "1.2cqw 1.5cqw",
                                   display: "flex",
                                   flexDirection: "column",
-                                  gap: "4px",
+                                  gap: "0.6cqw",
                                   direction: isArabic ? "rtl" : "ltr",
                                 }}>
                                   {el.title && (
-                                    <div style={{ fontSize: "9px", fontWeight: 700, color: accentColor, marginBottom: "2px" }}>
+                                    <div style={{ fontSize: "1.1cqw", fontWeight: 700, color: accentColor, marginBottom: "0.3cqw" }}>
                                       {el.title}
                                     </div>
                                   )}
-                                  <div style={{ fontSize: "8px", color: "#CBD5E1", lineHeight: 1.5, overflow: "hidden" }}>
+                                  <div style={{ fontSize: "0.85cqw", color: "#CBD5E1", lineHeight: 1.5, overflow: "hidden" }}>
                                     {el.text}
                                   </div>
                                 </div>
@@ -1225,16 +1259,16 @@ function Index() {
                                   border: `1px solid ${accentColor}44`,
                                   borderLeft: `3px solid ${accentColor}`,
                                   borderRadius: "8px",
-                                  padding: "6px 10px",
+                                  padding: "1cqw 1.2cqw",
                                   display: "flex",
                                   flexDirection: "column",
                                   justifyContent: "center",
                                   direction: isArabic ? "rtl" : "ltr",
                                 }}>
-                                  <div style={{ fontSize: `${Math.max(14, Math.min(28, 60 / Math.max(el.value.length, 1))) * (SCALE / 96)}px`, fontWeight: 800, color: accentColor, lineHeight: 1 }}>
+                                  <div style={{ fontSize: `${Math.max(14, Math.min(28, 60 / Math.max(el.value.length, 1))) / 12.8}cqw`, fontWeight: 800, color: accentColor, lineHeight: 1 }}>
                                     {el.value}
                                   </div>
-                                  <div style={{ fontSize: "7px", color: "#94A3B8", marginTop: "3px" }}>
+                                  <div style={{ fontSize: "0.85cqw", color: "#94A3B8", marginTop: "0.4cqw" }}>
                                     {el.label}
                                   </div>
                                 </div>
@@ -1261,6 +1295,166 @@ function Index() {
                                   background: el.color || "#334155",
                                   borderRadius: "2px",
                                 }} />
+                              );
+                            }
+
+                            if (el.type === "svg_chart") {
+                              const e = el as any;
+                              const values = e.data?.map((d: any) => Number(d.value) || 0) || [];
+                              const maxVal = Math.max(...values, 1);
+                              const chartColors = e.data?.map((d: any) => d.color || accentColor) || [];
+
+                              return (
+                                <div
+                                  key={ei}
+                                  style={{
+                                    ...style,
+                                    background: "rgba(13,17,23,0.72)",
+                                    backdropFilter: "blur(12px)",
+                                    border: `1px solid ${accentColor}55`,
+                                    borderTop: `2px solid ${accentColor}`,
+                                    borderRadius: "10px",
+                                    padding: "1cqw 1.2cqw",
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    justifyContent: "space-between",
+                                    direction: isArabic ? "rtl" : "ltr",
+                                  }}
+                                >
+                                  {e.title && (
+                                    <div style={{ fontSize: "1.1cqw", fontWeight: 700, color: "#FFFFFF", marginBottom: "0.4cqw", textAlign: isArabic ? "right" : "left" }}>
+                                      {e.title}
+                                    </div>
+                                  )}
+                                  <div style={{ flex: 1, position: "relative", minHeight: 0 }}>
+                                    {e.chartType === "bar" && (
+                                      <div style={{ display: "flex", height: "100%", alignItems: "flex-end", gap: "0.8cqw", paddingBottom: "1.5cqw", paddingTop: "0.4cqw" }}>
+                                        {e.data?.map((item: any, idx: number) => {
+                                          const heightPct = `${(item.value / maxVal) * 80}%`;
+                                          return (
+                                            <div key={idx} style={{ flex: 1, display: "flex", flexDirection: "column", height: "100%", justifyContent: "flex-end", alignItems: "center", position: "relative" }}>
+                                              <div style={{ fontSize: "0.8cqw", fontWeight: "bold", color: chartColors[idx], marginBottom: "0.2cqw" }}>
+                                                {item.value}
+                                              </div>
+                                              <div style={{ width: "100%", height: heightPct, background: chartColors[idx], borderRadius: "3px 3px 0 0", minHeight: "4px" }} />
+                                              <div style={{ position: "absolute", bottom: "-1.3cqw", left: "-5px", right: "-5px", textAlign: "center", fontSize: "0.75cqw", color: "#94A3B8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                                {item.label}
+                                              </div>
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
+
+                                    {e.chartType === "line" && (
+                                      <svg viewBox="0 0 100 50" preserveAspectRatio="none" style={{ width: "100%", height: "100%", overflow: "visible" }}>
+                                        {(() => {
+                                          const points = e.data?.map((item: any, idx: number) => {
+                                            const x = e.data.length > 1 ? (idx / (e.data.length - 1)) * 90 + 5 : 50;
+                                            const y = 40 - (item.value / maxVal) * 30;
+                                            return { x, y, label: item.label, value: item.value };
+                                          }) || [];
+
+                                          const d = points.reduce((acc: string, p: any, idx: number) => {
+                                            return acc + (idx === 0 ? `M ${p.x} ${p.y}` : ` L ${p.x} ${p.y}`);
+                                          }, "");
+
+                                          return (
+                                            <>
+                                              {d && <path d={d} fill="none" stroke={accentColor} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />}
+                                              {points.map((p: any, idx: number) => (
+                                                <g key={idx}>
+                                                  <circle cx={p.x} cy={p.y} r="1.5" fill="#FFFFFF" stroke={accentColor} strokeWidth="0.8" />
+                                                  <text x={p.x} y={p.y - 3} fontSize="3.5" fontWeight="bold" fill={accentColor} textAnchor="middle">{p.value}</text>
+                                                  <text x={p.x} y="47" fontSize="3" fill="#94A3B8" textAnchor="middle">{p.label}</text>
+                                                </g>
+                                              ))}
+                                            </>
+                                          );
+                                        })()}
+                                      </svg>
+                                    )}
+
+                                    {e.chartType === "area" && (
+                                      <svg viewBox="0 0 100 50" preserveAspectRatio="none" style={{ width: "100%", height: "100%", overflow: "visible" }}>
+                                        {(() => {
+                                          const points = e.data?.map((item: any, idx: number) => {
+                                            const x = e.data.length > 1 ? (idx / (e.data.length - 1)) * 90 + 5 : 50;
+                                            const y = 40 - (item.value / maxVal) * 30;
+                                            return { x, y, label: item.label, value: item.value };
+                                          }) || [];
+
+                                          const linePath = points.reduce((acc: string, p: any, idx: number) => {
+                                            return acc + (idx === 0 ? `M ${p.x} ${p.y}` : ` L ${p.x} ${p.y}`);
+                                          }, "");
+
+                                          const areaPath = points.length > 0
+                                            ? `${linePath} L ${points[points.length - 1].x} 42 L ${points[0].x} 42 Z`
+                                            : "";
+
+                                          return (
+                                            <>
+                                              <defs>
+                                                <linearGradient id={`areaGrad-${ei}`} x1="0" y1="0" x2="0" y2="1">
+                                                  <stop offset="0%" stopColor={accentColor} stopOpacity="0.4" />
+                                                  <stop offset="100%" stopColor={accentColor} stopOpacity="0.0" />
+                                                </linearGradient>
+                                              </defs>
+                                              {areaPath && <path d={areaPath} fill={`url(#areaGrad-${ei})`} />}
+                                              {linePath && <path d={linePath} fill="none" stroke={accentColor} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />}
+                                              {points.map((p: any, idx: number) => (
+                                                <g key={idx}>
+                                                  <circle cx={p.x} cy={p.y} r="1.5" fill="#FFFFFF" stroke={accentColor} strokeWidth="0.8" />
+                                                  <text x={p.x} y={p.y - 3} fontSize="3.5" fontWeight="bold" fill={accentColor} textAnchor="middle">{p.value}</text>
+                                                  <text x={p.x} y="47" fontSize="3" fill="#94A3B8" textAnchor="middle">{p.label}</text>
+                                                </g>
+                                              ))}
+                                            </>
+                                          );
+                                        })()}
+                                      </svg>
+                                    )}
+
+                                    {e.chartType === "pie" && (
+                                      <div style={{ display: "flex", height: "100%", alignItems: "center", justifyContent: "center", gap: "1.2cqw", paddingBottom: "0.4cqw" }}>
+                                        <svg viewBox="0 0 36 36" style={{ width: "3.2cqw", height: "3.2cqw", transform: "rotate(-90deg)", flexShrink: 0 }}>
+                                          {(() => {
+                                            const total = values.reduce((a: number, b: number) => a + b, 0) || 1;
+                                            let cumPercent = 0;
+                                            return e.data?.map((item: any, idx: number) => {
+                                              const percent = item.value / total;
+                                              const strokeDasharray = `${percent * 100} ${100 - percent * 100}`;
+                                              const strokeDashoffset = 100 - cumPercent + 25;
+                                              cumPercent += percent * 100;
+                                              return (
+                                                <circle
+                                                  key={idx}
+                                                  cx="18"
+                                                  cy="18"
+                                                  r="15.915"
+                                                  fill="transparent"
+                                                  stroke={chartColors[idx]}
+                                                  strokeWidth="4"
+                                                  strokeDasharray={strokeDasharray}
+                                                  strokeDashoffset={strokeDashoffset}
+                                                />
+                                              );
+                                            });
+                                          })()}
+                                        </svg>
+                                        <div style={{ display: "flex", flexDirection: "column", gap: "0.3cqw", justifyContent: "center", minWidth: 0, overflow: "hidden" }}>
+                                          {e.data?.slice(0, 4).map((item: any, idx: number) => (
+                                            <div key={idx} style={{ display: "flex", alignItems: "center", gap: "0.4cqw", whiteSpace: "nowrap" }}>
+                                              <div style={{ width: "0.6cqw", height: "0.6cqw", borderRadius: "50%", background: chartColors[idx], flexShrink: 0 }} />
+                                              <span style={{ fontSize: "0.8cqw", color: "#FFFFFF", fontWeight: "bold" }}>{item.value}</span>
+                                              <span style={{ fontSize: "0.75cqw", color: "#94A3B8", overflow: "hidden", textOverflow: "ellipsis" }}>{item.label}</span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
                               );
                             }
 
@@ -1609,6 +1803,102 @@ function Index() {
     <main className="relative min-h-screen text-foreground bg-background overflow-x-hidden selection:bg-indigo-500/25">
       <Toaster theme="dark" position="top-center" richColors />
 
+      <AnimatePresence>
+        {showV2Modal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#030303]/85 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              transition={{ type: "spring", duration: 0.5, bounce: 0.15 }}
+              className="relative max-w-2xl w-full rounded-3xl p-8 border border-white/10 shadow-2xl overflow-hidden bg-gradient-to-b from-[#0A0A0F]/95 to-[#050507]/98 text-right"
+              style={{ direction: "rtl" }}
+            >
+              {/* Subtle background glow blobs inside modal */}
+              <div className="absolute top-0 right-0 w-[300px] h-[300px] rounded-full blur-[100px] pointer-events-none" style={{ background: "radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 70%)" }} />
+              <div className="absolute bottom-0 left-0 w-[250px] h-[250px] rounded-full blur-[90px] pointer-events-none" style={{ background: "radial-gradient(circle, rgba(16,185,129,0.06) 0%, transparent 70%)" }} />
+              
+              {/* Top Accent Line */}
+              <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent" />
+
+              {/* Header */}
+              <div className="text-center mb-6 relative z-10">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-indigo-500/30 text-[10px] font-bold text-indigo-400 bg-indigo-500/10 mb-3 animate-pulse">
+                  ✨ إطلاق الإصدار الجديد V2.0
+                </span>
+                <h2 className="text-2xl font-black text-white leading-tight">ما الجديد في TOLZY Flow V2؟</h2>
+                <p className="text-xs text-muted-foreground mt-1.5">استمتع بأحدث التطورات الذكية لتصميم مستنداتك وعروضك التقديمية وجداولك.</p>
+              </div>
+
+              {/* Feature Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 my-6 relative z-10">
+                {/* Word Card */}
+                <div className="p-4 rounded-2xl border border-white/5 bg-white/[0.01] hover:border-indigo-500/20 hover:bg-indigo-500/[0.01] transition-all duration-300">
+                  <div className="flex items-center gap-2.5 mb-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-500/10 border border-indigo-500/20">
+                      <FileText className="h-4 w-4 text-indigo-400" />
+                    </div>
+                    <h3 className="text-xs font-bold text-white">مستندات Word ذكية (RTL)</h3>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">دعم كامل للغة العربية والـ RTL لمنع تداخل الأقواس والرموز، مع شريط جانبي Indigo فخم وتصميم جداول Word أنيقة.</p>
+                </div>
+
+                {/* Excel Card */}
+                <div className="p-4 rounded-2xl border border-white/5 bg-white/[0.01] hover:border-emerald-500/20 hover:bg-emerald-500/[0.01] transition-all duration-300">
+                  <div className="flex items-center gap-2.5 mb-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                      <FileSpreadsheet className="h-4 w-4 text-emerald-400" />
+                    </div>
+                    <h3 className="text-xs font-bold text-white">جداول Excel محاسبية</h3>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">مظهر أخضر احترافي ونظيف، تنسيق تلقائي للعملات والآلاف، وتنسيق مزدوج (Double Underline) للإجماليات بطريقة مالية معتمدة.</p>
+                </div>
+
+                {/* Slides Card */}
+                <div className="p-4 rounded-2xl border border-white/5 bg-white/[0.01] hover:border-orange-500/20 hover:bg-orange-500/[0.01] transition-all duration-300">
+                  <div className="flex items-center gap-2.5 mb-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-orange-500/10 border border-orange-500/20">
+                      <Presentation className="h-4 w-4 text-orange-400" />
+                    </div>
+                    <h3 className="text-xs font-bold text-white">شرائح PowerPoint سينمائية</h3>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">تقييد الصور لـ (2) كحد أقصى، تقسيم الشريحة لأعمدة مستقلة لمنع تراكب النصوص فوق الصور، تكبير خطوط العروض، وتعتيم الكروت للقراءة المريحة.</p>
+                </div>
+
+                {/* Share/Routing Card */}
+                <div className="p-4 rounded-2xl border border-white/5 bg-white/[0.01] hover:border-sky-500/20 hover:bg-sky-500/[0.01] transition-all duration-300">
+                  <div className="flex items-center gap-2.5 mb-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-sky-500/10 border border-sky-500/20">
+                      <Sparkles className="h-4 w-4 text-sky-400" />
+                    </div>
+                    <h3 className="text-xs font-bold text-white">واجهة متطورة وروابط مشاركة</h3>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">روابط فريدة خاصة بكل مشروع لتسهيل مشاركته أو حفظه، مع واجهة لوحة تحكم زجاجية تفاعلية تتغير ألوانها ديناميكياً بحسب نوع المستند.</p>
+                </div>
+              </div>
+
+              {/* Action */}
+              <div className="flex justify-center mt-6 relative z-10">
+                <button
+                  onClick={() => {
+                    localStorage.setItem("tolzy_v2_dismissed", "true");
+                    setShowV2Modal(false);
+                  }}
+                  className="px-8 py-3 flex items-center justify-center gap-2 rounded-2xl text-xs font-bold text-[#050507] transition-all btn-shimmer active:scale-95 cursor-pointer"
+                  style={{
+                    background: "linear-gradient(135deg, #fff 0%, #e8e8ff 100%)",
+                    boxShadow: "0 10px 25px -5px rgba(99,102,241,0.35)"
+                  }}
+                >
+                  <Sparkles className="h-4 w-4 text-indigo-600" />
+                  ابدأ استكشاف TOLZY V2.0
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* Dot grid background */}
       <div className="pointer-events-none absolute inset-0 grid-bg opacity-50" />
 
@@ -1648,7 +1938,7 @@ function Index() {
         {/* Logo */}
         <div className="flex items-center gap-3">
           <div className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-border overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-[0_0_15px_rgba(99,102,241,0.2)] bg-[#0A0A0F]">
-            <img src="/image/logo.jpg" alt="TOLZY Flow Logo" className="w-full h-full object-cover" />
+            <img src="/logo.jpg" alt="TOLZY Flow Logo" className="w-full h-full object-cover" />
             <div className="absolute inset-0 rounded-xl border border-border/50 pointer-events-none" />
           </div>
           <div>
@@ -1696,7 +1986,7 @@ function Index() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute right-0 mt-2.5 w-64 rounded-2xl border border-border z-50 p-2.5 space-y-1.5 shadow-2xl overflow-hidden"
+                    className="absolute left-0 mt-2.5 w-64 rounded-2xl border border-border z-50 p-2.5 space-y-1.5 shadow-2xl overflow-hidden"
                     style={{
                       background: "rgba(8, 8, 11, 0.95)",
                       backdropFilter: "blur(20px)"
@@ -1774,12 +2064,16 @@ function Index() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="mx-auto mb-6 inline-flex items-center gap-2.5 rounded-full px-4 py-1.5"
-          style={{ background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.25)" }}
+          className="mx-auto mb-6 inline-flex items-center gap-2.5 rounded-full px-4 py-1.5 backdrop-blur-md transition-all duration-300 hover:scale-105"
+          style={{ 
+            background: "rgba(99,102,241,0.08)", 
+            border: "1px solid rgba(99,102,241,0.2)",
+            boxShadow: "0 4px 20px -2px rgba(99,102,241,0.15), inset 0 0 12px 1px rgba(99,102,241,0.05)"
+          }}
         >
-          <div className="glow-dot" />
-          <span className="text-[11px] font-semibold" style={{ color: "#a5b4fc" }}>
-            Powered by Gemini AI · المعالجة الفورية
+          <div className="glow-dot" style={{ boxShadow: "0 0 10px 3px rgba(110,231,183,0.5)" }} />
+          <span className="text-[11px] font-bold tracking-wider" style={{ color: "#c7d2fe" }}>
+            Powered by Gemini 2.0 Flash · المعالجة الفورية
           </span>
         </motion.div>
 
@@ -1788,7 +2082,7 @@ function Index() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.07 }}
-          className="text-4xl sm:text-6xl font-black tracking-tight leading-[1.08]"
+          className="text-4xl sm:text-6xl font-black tracking-tight leading-[1.08] select-none"
         >
           <span className="text-gradient">
             {mode === "excel"
@@ -1828,11 +2122,20 @@ function Index() {
               <button
                 key={m}
                 onClick={() => { setMode(m); setPrompt(""); }}
-                className={`mode-btn ${
+                className={`mode-btn transition-all duration-300 scale-100 hover:scale-[1.02] active:scale-[0.98] ${
                   mode === m
                     ? m === "word" ? "mode-btn-word" : m === "excel" ? "mode-btn-excel" : "mode-btn-ppt"
                     : "mode-btn-inactive"
                 }`}
+                style={{
+                  boxShadow: mode === m
+                    ? m === "word" 
+                      ? "0 4px 15px -3px rgba(129,140,248,0.3)" 
+                      : m === "excel" 
+                      ? "0 4px 15px -3px rgba(52,211,153,0.3)" 
+                      : "0 4px 15px -3px rgba(251,146,60,0.3)"
+                    : "none"
+                }}
               >
                 {m === "excel" ? (
                   <FileSpreadsheet className="h-3.5 w-3.5" />
@@ -1841,32 +2144,39 @@ function Index() {
                 ) : (
                   <LayoutTemplate className="h-3.5 w-3.5" />
                 )}
-                {m === "excel" ? "Spreadsheet" : m === "presentation" ? "Presentation" : "Document"}
+                {m === "excel" ? "جدول بيانات Excel" : m === "presentation" ? "عرض تقديمي PPTX" : "مستند Word رسمي"}
               </button>
             ))}
           </div>
 
           {/* Textarea wrapped with elegant soft blue faint ripples */}
           <div className="relative">
-            {/* Soft Azure/Indigo Concentric Ambient Glow Rings */}
+            {/* Soft Concentric Ambient Glow Rings */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
               <motion.div
                 animate={{ scale: [1, 1.06, 1], opacity: [0.35, 0.55, 0.35] }}
                 transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
                 className="absolute w-[108%] h-[112%] rounded-3xl blur-[60px]"
-                style={{ background: "radial-gradient(circle, rgba(14,165,233,0.14) 0%, rgba(99,102,241,0.04) 50%, transparent 70%)" }}
+                style={{ background: `radial-gradient(circle, ${currentMode.color}22 0%, rgba(99,102,241,0.04) 50%, transparent 70%)` }}
               />
               <motion.div
                 animate={{ scale: [1.05, 0.96, 1.05], opacity: [0.2, 0.4, 0.2] }}
                 transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 1 }}
                 className="absolute w-[118%] h-[122%] rounded-3xl blur-[80px]"
-                style={{ background: "radial-gradient(circle, rgba(56,189,248,0.08) 0%, transparent 70%)" }}
+                style={{ background: `radial-gradient(circle, ${currentMode.color}0f 0%, transparent 70%)` }}
               />
             </div>
 
             <div
-              className="relative z-10 rounded-3xl overflow-hidden p-6"
-              style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.09)" }}
+              className="relative z-10 rounded-3xl overflow-hidden p-6 transition-all duration-300 border"
+              style={{ 
+                background: "rgba(10, 10, 15, 0.7)", 
+                backdropFilter: "blur(20px)",
+                borderColor: isPromptFocused ? `${currentMode.color}50` : "rgba(255, 255, 255, 0.08)",
+                boxShadow: isPromptFocused 
+                  ? `0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 50px -10px ${currentMode.color}30, inset 0 0 0 1px rgba(255, 255, 255, 0.02)` 
+                  : `0 20px 50px -12px rgba(0, 0, 0, 0.5), 0 0 40px -10px ${currentMode.color}0f, inset 0 0 0 1px rgba(255, 255, 255, 0.01)`
+              }}
             >
               {/* Glow accent line at top */}
               <div className="h-px w-full absolute top-0 left-0" style={{ background: `linear-gradient(90deg, transparent, ${currentMode.color}60, transparent)` }} />
@@ -1882,6 +2192,8 @@ function Index() {
                     }
                   }
                 }}
+                onFocus={() => setIsPromptFocused(true)}
+                onBlur={() => setIsPromptFocused(false)}
                 rows={5}
                 placeholder={
                   mode === "excel"
@@ -1921,6 +2233,9 @@ function Index() {
                       background: loading
                         ? "rgba(255,255,255,0.05)"
                         : "linear-gradient(135deg, #fff 0%, #e8e8ff 100%)",
+                      boxShadow: (!loading && prompt.trim().length >= 8)
+                        ? `0 0 25px 3px ${currentMode.color}45`
+                        : "none",
                     }}
                   >
                     {loading ? (
@@ -1995,57 +2310,76 @@ function Index() {
                   <p className="text-[10px] text-muted-foreground mt-1">ابدأ بإنشاء أول مستند الآن!</p>
                 </div>
               ) : (
-                projects.map(proj => (
-                  <div
-                    key={proj.id}
-                    onClick={() => setActiveProject(proj)}
-                    className="group/item flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-all bg-card border-border hover:shadow-md"
-                    
-                    
-                    
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div
-                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border transition-all"
-                        style={{
-                          background: proj.type === "excel"
-                            ? "rgba(52,211,153,0.1)"
-                            : proj.type === "presentation"
-                            ? "rgba(251,146,60,0.1)"
-                            : "rgba(129,140,248,0.1)",
-                          borderColor: proj.type === "excel"
-                            ? "rgba(52,211,153,0.2)"
-                            : proj.type === "presentation"
-                            ? "rgba(251,146,60,0.2)"
-                            : "rgba(129,140,248,0.2)",
-                        }}
-                      >
-                        <ModeIcon mode={proj.type} size="h-3.5 w-3.5" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-xs font-semibold text-foreground dark:text-white truncate group-hover/item:text-indigo-300 transition-colors">{proj.title}</p>
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          <Clock className="h-2.5 w-2.5" style={{ color: "#52526a" }} />
-                          <p className="text-[9px]" style={{ color: "#52526a" }}>
-                            {new Date(proj.updatedAt).toLocaleDateString("ar-EG", { year: "numeric", month: "short", day: "numeric" })}
-                          </p>
+                projects.map(proj => {
+                  const projColor = proj.type === "excel" ? "#34d399" : proj.type === "presentation" ? "#fb923c" : "#818cf8";
+                  return (
+                    <div
+                      key={proj.id}
+                      onClick={() => navigate({ search: { projectId: proj.id } })}
+                      className="group/item flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-all duration-300"
+                      style={{
+                        background: "rgba(255, 255, 255, 0.015)",
+                        borderColor: "rgba(255, 255, 255, 0.05)",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = `${projColor}35`;
+                        e.currentTarget.style.background = `${projColor}04`;
+                        e.currentTarget.style.boxShadow = `0 10px 30px -15px ${projColor}15`;
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.05)";
+                        e.currentTarget.style.background = "rgba(255, 255, 255, 0.015)";
+                        e.currentTarget.style.boxShadow = "none";
+                      }}
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div
+                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border transition-all"
+                          style={{
+                            background: proj.type === "excel"
+                              ? "rgba(52,211,153,0.1)"
+                              : proj.type === "presentation"
+                              ? "rgba(251,146,60,0.1)"
+                              : "rgba(129,140,248,0.1)",
+                            borderColor: proj.type === "excel"
+                              ? "rgba(52,211,153,0.2)"
+                              : proj.type === "presentation"
+                              ? "rgba(251,146,60,0.2)"
+                              : "rgba(129,140,248,0.2)",
+                          }}
+                        >
+                          <ModeIcon mode={proj.type} size="h-3.5 w-3.5" />
+                        </div>
+                        <div className="min-w-0">
+                          <p 
+                            className="text-xs font-bold text-foreground dark:text-white truncate transition-colors duration-300"
+                            style={{ 
+                              // we can also transition to projColor on group hover!
+                            }}
+                          >{proj.title}</p>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <Clock className="h-2.5 w-2.5" style={{ color: "#52526a" }} />
+                            <p className="text-[9px]" style={{ color: "#52526a" }}>
+                              {new Date(proj.updatedAt).toLocaleDateString("ar-EG", { year: "numeric", month: "short", day: "numeric" })}
+                            </p>
+                          </div>
                         </div>
                       </div>
+                      <div className="flex items-center gap-2 shrink-0 text-left">
+                        <TypeBadge type={proj.type} />
+                        <button
+                          onClick={(e: any) => handleDeleteProject(proj.id, e)}
+                          className="p-1.5 rounded-lg transition-all opacity-0 group-hover/item:opacity-100"
+                          style={{ color: "#6b6b7b" }}
+                          onMouseEnter={(e: any) => { (e.currentTarget as HTMLElement).style.color = "#ef4444"; (e.currentTarget as HTMLElement).style.background = "rgba(239,68,68,0.1)"; }}
+                          onMouseLeave={(e: any) => { (e.currentTarget as HTMLElement).style.color = "#6b6b7b"; (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <TypeBadge type={proj.type} />
-                      <button
-                        onClick={(e: any) => handleDeleteProject(proj.id, e)}
-                        className="p-1.5 rounded-lg transition-all opacity-0 group-hover/item:opacity-100"
-                        style={{ color: "#6b6b7b" }}
-                        onMouseEnter={(e: any) => { (e.currentTarget as HTMLElement).style.color = "#ef4444"; (e.currentTarget as HTMLElement).style.background = "rgba(239,68,68,0.1)"; }}
-                        onMouseLeave={(e: any) => { (e.currentTarget as HTMLElement).style.color = "#6b6b7b"; (e.currentTarget as HTMLElement).style.background = "transparent"; }}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </button>
-                    </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </motion.div>
@@ -2092,7 +2426,17 @@ function Index() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: card.delay }}
               onMouseMove={handleMouseMove}
-              className="bento-card md:col-span-4 flex flex-col gap-4"
+              className="bento-card md:col-span-4 flex flex-col gap-4 transition-all duration-300 hover:scale-[1.01]"
+              style={{
+                "--bento-glow": `rgba(${card.color === "#818cf8" ? "129,140,248" : card.color === "#34d399" ? "52,211,153" : "251,146,60"}, 0.14)`,
+                borderColor: "rgba(255, 255, 255, 0.065)",
+              } as React.CSSProperties}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = `${card.color}35`;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.065)";
+              }}
             >
               {/* Icon + stat row */}
               <div className="relative z-10 flex items-start justify-between">
@@ -2124,7 +2468,7 @@ function Index() {
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
             <div className="flex h-8 w-8 overflow-hidden items-center justify-center rounded-lg border border-border shadow-sm transition-transform duration-300 hover:scale-105 bg-[#0A0A0F]">
-              <img src="/image/logo.jpg" alt="TOLZY Flow Logo" className="w-full h-full object-cover" />
+              <img src="/logo.jpg" alt="TOLZY Flow Logo" className="w-full h-full object-cover" />
             </div>
             <div>
               <p className="text-xs font-black font-mono bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70 dark:from-white dark:to-white/70">TOLZY Flow</p>

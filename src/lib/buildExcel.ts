@@ -6,13 +6,14 @@ import { isProjectArabic } from "./lang";
 
 export async function generateAndDownloadExcel(data: ExcelJSON, fileName = "spreadsheet.xlsx") {
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = "Docify";
-  workbook.lastModifiedBy = "Docify";
+  workbook.creator = "TOLZY Flow";
+  workbook.lastModifiedBy = "TOLZY Flow";
   workbook.created = new Date();
   workbook.modified = new Date();
 
   const isArabic = isProjectArabic(data);
   const textAlignment = isArabic ? "right" : "left";
+  const fontName = isArabic ? "Cairo" : "Segoe UI";
 
   data.sheets.forEach((sheetData) => {
     // Add worksheet with dynamic RTL view based on language detection
@@ -23,21 +24,21 @@ export async function generateAndDownloadExcel(data: ExcelJSON, fileName = "spre
     // Add headers
     if (sheetData.headers && sheetData.headers.length > 0) {
       const headerRow = worksheet.addRow(sheetData.headers);
-      headerRow.font = { name: "Arial", size: 11, bold: true, color: { argb: "FFFFFFFF" } };
+      headerRow.font = { name: fontName, size: 11, bold: true, color: { argb: "FFFFFFFF" } };
       headerRow.alignment = { vertical: "middle", horizontal: textAlignment };
-      headerRow.height = 26;
+      headerRow.height = 28; // Premium row height
 
       headerRow.eachCell((cell) => {
         cell.fill = {
           type: "pattern",
           pattern: "solid",
-          fgColor: { argb: "FF1E3A8A" } // NAVY header background
+          fgColor: { argb: "FF107C41" } // Excel green theme
         };
         cell.border = {
-          top: { style: "thin", color: { argb: "FFE5E7EB" } },
-          bottom: { style: "thin", color: { argb: "FFE5E7EB" } },
-          left: { style: "thin", color: { argb: "FFE5E7EB" } },
-          right: { style: "thin", color: { argb: "FFE5E7EB" } }
+          top: { style: "thin", color: { argb: "FF0B5E31" } },
+          bottom: { style: "medium", color: { argb: "FF0B5E31" } },
+          left: { style: "thin", color: { argb: "FF0B5E31" } },
+          right: { style: "thin", color: { argb: "FF0B5E31" } }
         };
       });
     }
@@ -45,57 +46,109 @@ export async function generateAndDownloadExcel(data: ExcelJSON, fileName = "spre
     // Add rows
     if (sheetData.rows && sheetData.rows.length > 0) {
       sheetData.rows.forEach((rowCells, rIdx) => {
+        // Detect if this row represents a total/summary row
+        const isTotalRow = rowCells.some((cellObj) => {
+          const valStr = String(cellObj.value || "").toLowerCase();
+          return (
+            valStr.includes("إجمالي") ||
+            valStr.includes("المجموع") ||
+            valStr.includes("مجموع") ||
+            valStr.includes("total") ||
+            valStr.includes("average") ||
+            valStr.includes("المتوسط")
+          );
+        });
+
         // Map ExcelCell array to ExcelJS row values
         const rowValues = rowCells.map((c) => {
           if (c.formula) {
             // Strip leading '=' if present, ExcelJS expects formula without '='
             return { formula: c.formula.startsWith("=") ? c.formula.substring(1) : c.formula };
           }
-          return c.value;
+          
+          // Force numbers to be stored as actual numbers instead of strings for calculations
+          const isNumericStr = 
+            typeof c.value === "string" && 
+            !isNaN(Number(c.value)) && 
+            c.value.trim() !== "" && 
+            !c.value.startsWith("0");
+            
+          return isNumericStr ? Number(c.value) : c.value;
         });
 
         const addedRow = worksheet.addRow(rowValues);
-        addedRow.height = 21;
+        addedRow.height = isTotalRow ? 24 : 22; // Premium spacing
 
         const isEvenRow = rIdx % 2 === 0;
 
         rowCells.forEach((c, cIdx) => {
           const cell = addedRow.getCell(cIdx + 1);
           
-          // Determine if value is numeric to right-align numbers globally
-          const isNumeric = 
-            typeof c.value === "number" || 
-            (!isNaN(Number(c.value)) && String(c.value).trim() !== "" && !c.value.toString().startsWith("0"));
+          // Determine if value is numeric to right-align and format numbers globally
+          const isNumericVal = 
+            typeof cell.value === "number" || 
+            (typeof cell.value === "object" && cell.value !== null && "formula" in cell.value);
 
           cell.font = {
-            name: "Arial",
-            size: 10,
-            bold: c.bold ?? false,
-            color: c.color ? { argb: "FF" + c.color.replace("#", "") } : { argb: "FF374151" }
+            name: fontName,
+            size: isTotalRow ? 10.5 : 10,
+            bold: isTotalRow ? true : (c.bold ?? false),
+            color: c.color ? { argb: "FF" + c.color.replace("#", "") } : { argb: isTotalRow ? "FF0B5E31" : "FF374151" }
           };
 
           cell.alignment = {
             vertical: "middle",
-            horizontal: isNumeric ? "right" : textAlignment,
+            horizontal: isNumericVal ? "right" : textAlignment,
           };
 
-          // Apply bg pattern if defined, otherwise apply modern light zebra striping
-          const bgHex = c.bg ? c.bg.replace("#", "") : (isEvenRow ? "F9FAFB" : null);
+          // Apply number formatting for numeric cells (comma separators)
+          if (isNumericVal) {
+            const numValue = Number(cell.value);
+            // Check if there are decimals
+            if (!isNaN(numValue)) {
+              cell.numFmt = numValue % 1 !== 0 ? "#,##0.00" : "#,##0";
+            } else {
+              // If it's a formula, apply general numeric format with commas
+              cell.numFmt = "#,##0.00";
+            }
+          }
+
+          // Background styling: Total rows get a soft green tint, others alternate zebra striping
+          let bgHex = c.bg ? c.bg.replace("#", "") : null;
+          if (!bgHex) {
+            if (isTotalRow) {
+              bgHex = "FFE6F4EA"; // accounting green tint
+            } else if (isEvenRow) {
+              bgHex = "FFF4FBF8"; // ultra-soft green alternating striping
+            }
+          }
+
           if (bgHex) {
+            // If it starts with FF, keep it, otherwise prepend FF for alpha channel
+            const argbColor = bgHex.length === 8 ? bgHex : "FF" + bgHex;
             cell.fill = {
               type: "pattern",
               pattern: "solid",
-              fgColor: { argb: "FF" + bgHex }
+              fgColor: { argb: argbColor }
             };
           }
 
-          // Apply borders
-          cell.border = {
-            top: { style: "thin", color: { argb: "FFE5E7EB" } },
-            bottom: { style: "thin", color: { argb: "FFE5E7EB" } },
-            left: { style: "thin", color: { argb: "FFE5E7EB" } },
-            right: { style: "thin", color: { argb: "FFE5E7EB" } }
-          };
+          // Borders: Total row gets thin top and double bottom border (Accounting Double Underline)
+          if (isTotalRow) {
+            cell.border = {
+              top: { style: "thin", color: { argb: "FFCCCCCC" } },
+              bottom: { style: "double", color: { argb: "FF107C41" } }, // Double green accounting border
+              left: { style: "thin", color: { argb: "FFE5E7EB" } },
+              right: { style: "thin", color: { argb: "FFE5E7EB" } }
+            };
+          } else {
+            cell.border = {
+              top: { style: "thin", color: { argb: "FFE5E7EB" } },
+              bottom: { style: "thin", color: { argb: "FFE5E7EB" } },
+              left: { style: "thin", color: { argb: "FFE5E7EB" } },
+              right: { style: "thin", color: { argb: "FFE5E7EB" } }
+            };
+          }
         });
       });
     }

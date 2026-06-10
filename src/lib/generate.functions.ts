@@ -49,7 +49,8 @@ export type SlideElementType =
   | "image_node"
   | "kpi_block"
   | "accent_shape"
-  | "divider_line";
+  | "divider_line"
+  | "svg_chart";
 
 export interface SlideElementBase {
   type: SlideElementType;
@@ -102,6 +103,13 @@ export interface DividerLineElement extends SlideElementBase {
   color?: string;
 }
 
+export interface SvgChartElement extends SlideElementBase {
+  type: "svg_chart";
+  chartType: "bar" | "line" | "pie" | "area";
+  data: { label: string; value: number; color?: string }[];
+  title?: string;
+}
+
 export type SlideElement =
   | HeroTextElement
   | SubtextElement
@@ -109,7 +117,8 @@ export type SlideElement =
   | ImageNodeElement
   | KpiBlockElement
   | AccentShapeElement
-  | DividerLineElement;
+  | DividerLineElement
+  | SvgChartElement;
 
 export interface FreestyleSlide {
   slide_title: string;
@@ -198,14 +207,21 @@ CRITICAL: Absolute prohibition of repetitive templates, pre-baked layouts, or tr
 - Target Margins: Absolute safety margin of 1.0 inch from all outer edges. Never overlap elements.
 
 ### DESIGN & VISUAL RULES
-1. TYPOGRAPHY HIERARCHY (Extreme Contrast):
-   - Slide Titles (hero_text): Must be massive, commanding, and ultra-bold (36pt to 44pt). Use maximum 1 line.
-   - Body/Descriptions: Must be clean, sharp, and highly muted (13pt to 15pt). Use light slate or muted gray text colors—never harsh pure white on dark backgrounds.
+1. TYPOGRAPHY HIERARCHY (Extreme Contrast & Legibility):
+   - Slide Titles (hero_text): Must be massive, commanding, and ultra-bold (44pt to 48pt). Use maximum 1 line.
+   - Body/Descriptions/Subtexts: Must be clean, sharp, and highly readable (16pt to 18pt). Glass cards text must be 14pt to 16pt.
+   - Always use the 'Cairo' font face rule for Arabic slides (to display text elegantly).
 2. NO MORE BULLET POINTS:
-   - Instead of lists, segment information into floating structural glass cards or numeric badges (e.g., "01", "02").
-3. VISUAL adaptiveness (Context-Aware Aesthetics):
-   - Analyze the slide topic. If it's financial or statistical, design massive KPI spotlight elements. If it's conceptual, focus on high-end negative space with short profound statements.
-4. LIVE IMAGES & BACKGROUNDS:
+   - Instead of lists, segment information into floating structural glass cards, numeric badges (e.g., '01', '02'), or visual elements like charts (svg_chart) and KPI blocks.
+3. STRICT IMAGE LIMITATION:
+   - Never use more than 1 or 2 "image_node" elements in a single slide. Having too many images looks unprofessional and cluttered. Only use images that directly support the slide's core message.
+4. STRICT GRID COLUMN LAYOUT (No Overlaps):
+   - Never overlap text elements (hero_text, subtext, glass_card) on top of image_node or svg_chart elements.
+   - Arrange the slide using separate horizontal columns (e.g., Text Column on one side, Graphic/Image Column on the other).
+   - If a slide has an image_node at x=7.0, w=5.3, then no text or card element should have coordinates that overlap with the x-range [7.0, 12.33]. Place the text/card elements in the x-range [1.0, 6.5] instead.
+5. VISUAL adaptiveness (Context-Aware Aesthetics):
+    - Analyze the slide topic. If it is financial, statistical, or contains quantitative/growth metrics, design massive KPI spotlight elements or a visual 'svg_chart'. If it is conceptual, focus on high-end negative space with short profound statements.
+6. LIVE IMAGES & BACKGROUNDS:
    - For every single slide, pick an incredibly precise, context-accurate Unsplash URL for the background or internal image nodes based on the text (e.g., use dark-abstract tech images for tech slides, minimalist architecture for corporate).
    - Always use the full Unsplash URL format: https://images.unsplash.com/photo-PHOTOID?w=1400&auto=format&fit=crop&q=85
 
@@ -253,6 +269,17 @@ You must output a strict JSON object matching this precise schema:
           "x": 1.0, "y": 2.0, "w": 3.0, "h": 2.0
         },
         {
+          "type": "svg_chart",
+          "chartType": "bar",
+          "title": "Quarterly Growth",
+          "data": [
+            { "label": "Q1", "value": 120, "color": "#6366F1" },
+            { "label": "Q2", "value": 190, "color": "#818cf8" },
+            { "label": "Q3", "value": 310, "color": "#38BDF8" }
+          ],
+          "x": 8.5, "y": 5.2, "w": 3.8, "h": 1.8
+        },
+        {
           "type": "accent_shape",
           "shape": "circle",
           "color": "#6366F1",
@@ -275,6 +302,7 @@ You must output a strict JSON object matching this precise schema:
 - glass_card: Floating semi-transparent card. Contains optional title + body text. Renders with glassmorphism effect.
 - image_node: A cropped image region from Unsplash. Use specific photo IDs for accuracy.
 - kpi_block: A large metric spotlight — huge value + small label underneath.
+- svg_chart: A vector-based visual chart to display statistics, ratios, performance, and financial data. Requires 'chartType' ("bar" | "line" | "pie" | "area"), 'data' (an array of '{ label: string, value: number, color?: string }'), and optional 'title'. Highly recommended for any numeric/analytical slide!
 - accent_shape: Decorative geometric shape (circle or rect). Use for depth and visual hierarchy only. Set opacity low (0.08-0.20).
 - divider_line: A thin horizontal or vertical separator line.
 
@@ -286,7 +314,7 @@ You must output a strict JSON object matching this precise schema:
 - Use accent_shape elements for out-of-bounds decorative bleeding (e.g., x=11.5, y=-1.0 for top-right circle bleeds).
 
 ### IMPORTANT LANGUAGE RULE
-If the source text language is Arabic, write ALL element texts/titles in professional, clear Arabic. JSON keys MUST always remain in English.
+If the source text language is Arabic, write ALL element texts/titles/labels in professional, clear Arabic. JSON keys MUST always remain in English.
 
 ### SLIDE COUNT
 Generate 6-10 slides total. Each slide must be visually distinct — vary the layout composition dramatically between slides (never use the same element arrangement twice).
@@ -360,12 +388,14 @@ For PowerPoint presentations ("presentation"):
       "accentColor": "string (hex with #)",
       "elements": [
         {
-          "type": "hero_text | subtext | glass_card | image_node | kpi_block | accent_shape | divider_line",
+          "type": "hero_text | subtext | glass_card | image_node | kpi_block | accent_shape | divider_line | svg_chart",
           "text": "string (for hero_text/subtext)",
-          "title": "string (for glass_card, optional)",
+          "title": "string (for glass_card/svg_chart, optional)",
           "value": "string (for kpi_block)",
           "label": "string (for kpi_block)",
           "imageUrl": "string (for image_node)",
+          "chartType": "bar | line | pie | area (for svg_chart)",
+          "data": "array of { label: string, value: number, color?: string } (for svg_chart)",
           "x": "number", "y": "number", "w": "number", "h": "number",
           "fontSize": "number (optional)",
           "color": "string (optional hex)",

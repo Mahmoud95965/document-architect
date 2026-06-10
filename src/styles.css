@@ -35,7 +35,7 @@
   --color-ring: var(--ring);
   --color-glow: var(--glow);
   --color-glow-2: var(--glow-2);
-  --font-display: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Cairo", "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 }
 
@@ -279,7 +279,7 @@
     inset: 0;
     background: radial-gradient(
       600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
-      rgba(99, 102, 241, 0.07),
+      var(--bento-glow, rgba(99, 102, 241, 0.07)),
       transparent 50%
     );
     z-index: 0;

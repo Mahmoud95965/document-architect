@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { motion } from "framer-motion";
-import { Sparkles, Mail, Lock, Loader2, AlertCircle, Eye, EyeOff, ArrowRight } from "lucide-react";
+import { Sparkles, Mail, Lock, Loader2, AlertCircle, Eye, EyeOff, ArrowRight, LogOut } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -38,7 +38,7 @@ const GoogleIcon = () => (
 );
 
 function LoginPage() {
-  const { user, plan, loading: authLoading } = useAuth();
+  const { user, plan, loading: authLoading, signOut } = useAuth();
   const navigate = useNavigate();
 
   const [email,       setEmail]       = useState("");
@@ -105,6 +105,8 @@ function LoginPage() {
     }
   }
 
+  const isNonPro = user && plan !== "pro";
+
   // Show a full-screen spinner while auth state is resolving
   if (authLoading) {
     return (
@@ -141,204 +143,293 @@ function LoginPage() {
         />
       </div>
 
-      {/* ── Login Card ── */}
-      <motion.div
-        initial={{ opacity: 0, y: 28, scale: 0.97 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-        className="relative z-10 w-full max-w-md"
-      >
-        {/* Top accent bar */}
-        <div className="h-px w-full mb-0" style={{ background: "linear-gradient(90deg, transparent, rgba(99,102,241,0.6), transparent)" }} />
-
-        <div
-          className="rounded-3xl p-8 sm:p-10"
-          style={{
-            background: "linear-gradient(145deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%)",
-            border: "1px solid rgba(255,255,255,0.08)",
-            boxShadow: "0 40px 100px -30px rgba(0,0,0,0.9), 0 0 0 1px rgba(255,255,255,0.03) inset",
-          }}
+      {isNonPro ? (
+        /* ── Upgrade Card ── */
+        <motion.div
+          initial={{ opacity: 0, y: 28, scale: 0.97 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+          className="relative z-10 w-full max-w-md"
         >
-          {/* Logo + heading */}
-          <div className="flex flex-col items-center text-center mb-8">
-            <div
-              className="relative flex h-16 w-16 items-center justify-center rounded-2xl mb-5"
-              style={{ background: "linear-gradient(135deg, #1e1e2e, #13131a)", border: "1px solid rgba(255,255,255,0.1)" }}
-            >
-              <Sparkles className="h-7 w-7 text-indigo-400" />
-              {/* Animated ring */}
+          {/* Top accent bar - Premium Gold */}
+          <div className="h-px w-full mb-0" style={{ background: "linear-gradient(90deg, transparent, rgba(245,158,11,0.6), transparent)" }} />
+
+          <div
+            className="rounded-3xl p-8 sm:p-10 text-center"
+            style={{
+              background: "linear-gradient(145deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              boxShadow: "0 40px 100px -30px rgba(0,0,0,0.9), 0 0 0 1px rgba(255,255,255,0.03) inset",
+            }}
+          >
+            {/* Logo + Icon */}
+            <div className="flex flex-col items-center text-center mb-6">
               <div
-                className="absolute inset-0 rounded-2xl border-glow"
-                style={{ opacity: 0.5 }}
-              />
+                className="relative flex h-16 w-16 items-center justify-center rounded-2xl mb-5"
+                style={{ background: "linear-gradient(135deg, #2a1f10, #13131a)", border: "1px solid rgba(245, 158, 11, 0.25)" }}
+              >
+                <Sparkles className="h-7 w-7 text-amber-400 animate-pulse" />
+                {/* Animated ring */}
+                <div
+                  className="absolute inset-0 rounded-2xl border-glow"
+                  style={{ opacity: 0.5, borderColor: "rgba(245, 158, 11, 0.3)" }}
+                />
+              </div>
+
+              {/* Badge */}
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/20 mb-4" style={{ direction: "rtl" }}>
+                ✨ حساب عادي / غير نشط
+              </span>
+
+              <h1 className="text-2xl font-black text-white tracking-tight">مطلوب ترقية الحساب إلى Pro</h1>
+              <p className="mt-3 text-sm leading-relaxed" style={{ color: "#a1a1b5", direction: "rtl" }}>
+                عذراً، حسابك الحالي لا يمتلك اشتراك <span className="text-amber-300 font-semibold">TOLZY Pro</span> نشط. لتتمكن من إنشاء وتوليد مستندات Word وجداول Excel وعروض PowerPoint التفاعلية، يرجى ترقية خطتك.
+              </p>
             </div>
 
-            <h1 className="text-2xl font-black text-white tracking-tight">تسجيل الدخول</h1>
-            <p className="mt-1.5 text-sm" style={{ color: "#6b6b7b" }}>
-              سجّل دخولك للوصول إلى{" "}
-              <span className="font-semibold" style={{ color: "#a5b4fc" }}>TOLZY Flow</span>
-            </p>
+            {/* Email info */}
+            <div className="rounded-xl py-2 px-4 mb-6 bg-white/5 border border-white/5 inline-block text-xs" style={{ color: "#8e8e9f", direction: "rtl" }}>
+              حسابك الحالي: <span className="text-white font-mono font-semibold">{user?.email}</span>
+            </div>
+
+            {/* Actions */}
+            <div className="space-y-3">
+              <a
+                href="https://tolzy.me/pricing"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full flex items-center justify-center gap-2.5 rounded-2xl py-3.5 text-sm font-bold text-[#050507] transition-all btn-shimmer"
+                style={{
+                  background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
+                  boxShadow: "0 4px 20px -4px rgba(245,158,11,0.4)",
+                }}
+              >
+                <Sparkles className="h-4 w-4 text-[#050507]" />
+                ترقية الحساب الآن
+              </a>
+
+              <button
+                onClick={() => signOut()}
+                className="w-full flex items-center justify-center gap-2.5 rounded-2xl py-3.5 text-sm font-semibold transition-all"
+                style={{
+                  background: "rgba(255,255,255,0.04)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  color: "#fff",
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
+              >
+                <LogOut className="h-4 w-4 text-gray-400" />
+                <span>تسجيل الخروج أو تبديل الحساب</span>
+              </button>
+            </div>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleLogin} className="space-y-4" noValidate>
+          {/* Powered-by note */}
+          <p className="mt-5 text-center text-[10px]" style={{ color: "#3d3d52" }}>
+            مشغّل بواسطة <span className="text-[#52526a] font-semibold">TOLZY Labs</span> · جميع الحقوق محفوظة
+          </p>
+        </motion.div>
+      ) : (
+        /* ── Login Card ── */
+        <motion.div
+          initial={{ opacity: 0, y: 28, scale: 0.97 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+          className="relative z-10 w-full max-w-md"
+        >
+          {/* Top accent bar */}
+          <div className="h-px w-full mb-0" style={{ background: "linear-gradient(90deg, transparent, rgba(99,102,241,0.6), transparent)" }} />
 
-            {/* Email */}
-            <div className="space-y-1.5">
-              <label className="block text-xs font-semibold text-right" style={{ color: "#9898a8", direction: "rtl" }}>
-                البريد الإلكتروني
-              </label>
-              <div className="relative">
-                <Mail
-                  className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none"
-                  style={{ color: "#52526a" }}
-                />
-                <input
-                  id="tolzy-email"
-                  type="email"
-                  autoComplete="email"
-                  value={email}
-                  onChange={e => { setEmail(e.target.value); setError(null); }}
-                  placeholder="name@example.com"
-                  required
-                  className="w-full rounded-xl pl-11 pr-4 py-3 text-sm text-white placeholder:text-[#3d3d52] outline-none transition-all"
-                  style={{
-                    background: "rgba(255,255,255,0.04)",
-                    border: "1px solid rgba(255,255,255,0.08)",
-                  }}
-                  onFocus={e => { e.target.style.borderColor = "rgba(129,140,248,0.5)"; e.target.style.background = "rgba(255,255,255,0.06)"; }}
-                  onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,0.08)"; e.target.style.background = "rgba(255,255,255,0.04)"; }}
-                />
-              </div>
-            </div>
-
-            {/* Password */}
-            <div className="space-y-1.5">
-              <label className="block text-xs font-semibold text-right" style={{ color: "#9898a8", direction: "rtl" }}>
-                كلمة المرور
-              </label>
-              <div className="relative">
-                <Lock
-                  className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none"
-                  style={{ color: "#52526a" }}
-                />
-                <input
-                  id="tolzy-password"
-                  type={showPass ? "text" : "password"}
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={e => { setPassword(e.target.value); setError(null); }}
-                  placeholder="••••••••••"
-                  required
-                  className="w-full rounded-xl pl-11 pr-11 py-3 text-sm text-white placeholder:text-[#3d3d52] outline-none transition-all"
-                  style={{
-                    background: "rgba(255,255,255,0.04)",
-                    border: "1px solid rgba(255,255,255,0.08)",
-                  }}
-                  onFocus={e => { e.target.style.borderColor = "rgba(129,140,248,0.5)"; e.target.style.background = "rgba(255,255,255,0.06)"; }}
-                  onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,0.08)"; e.target.style.background = "rgba(255,255,255,0.04)"; }}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPass(v => !v)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 transition-colors"
-                  style={{ color: "#52526a" }}
-                  onMouseEnter={e => (e.currentTarget.style.color = "#9898a8")}
-                  onMouseLeave={e => (e.currentTarget.style.color = "#52526a")}
-                >
-                  {showPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-            </div>
-
-            {/* Error message */}
-            {error && (
-              <motion.div
-                initial={{ opacity: 0, y: -6 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex items-start gap-2.5 rounded-xl px-4 py-3 text-right"
-                style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", direction: "rtl" }}
+          <div
+            className="rounded-3xl p-8 sm:p-10"
+            style={{
+              background: "linear-gradient(145deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              boxShadow: "0 40px 100px -30px rgba(0,0,0,0.9), 0 0 0 1px rgba(255,255,255,0.03) inset",
+            }}
+          >
+            {/* Logo + heading */}
+            <div className="flex flex-col items-center text-center mb-8">
+              <div
+                className="relative flex h-16 w-16 items-center justify-center rounded-2xl mb-5"
+                style={{ background: "linear-gradient(135deg, #1e1e2e, #13131a)", border: "1px solid rgba(255,255,255,0.1)" }}
               >
-                <AlertCircle className="h-4 w-4 text-red-400 shrink-0 mt-0.5" />
-                <p className="text-xs text-red-300 leading-relaxed">{error}</p>
-              </motion.div>
-            )}
+                <Sparkles className="h-7 w-7 text-indigo-400" />
+                {/* Animated ring */}
+                <div
+                  className="absolute inset-0 rounded-2xl border-glow"
+                  style={{ opacity: 0.5 }}
+                />
+              </div>
 
-            {/* Submit */}
+              <h1 className="text-2xl font-black text-white tracking-tight">تسجيل الدخول</h1>
+              <p className="mt-1.5 text-sm" style={{ color: "#6b6b7b" }}>
+                سجّل دخولك للوصول إلى{" "}
+                <span className="font-semibold" style={{ color: "#a5b4fc" }}>TOLZY Flow</span>
+              </p>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleLogin} className="space-y-4" noValidate>
+
+              {/* Email */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-right" style={{ color: "#9898a8", direction: "rtl" }}>
+                  البريد الإلكتروني
+                </label>
+                <div className="relative">
+                  <Mail
+                    className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none"
+                    style={{ color: "#52526a" }}
+                  />
+                  <input
+                    id="tolzy-email"
+                    type="email"
+                    autoComplete="email"
+                    value={email}
+                    onChange={e => { setEmail(e.target.value); setError(null); }}
+                    placeholder="name@example.com"
+                    required
+                    className="w-full rounded-xl pl-11 pr-4 py-3 text-sm text-white placeholder:text-[#3d3d52] outline-none transition-all"
+                    style={{
+                      background: "rgba(255,255,255,0.04)",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                    }}
+                    onFocus={e => { e.target.style.borderColor = "rgba(129,140,248,0.5)"; e.target.style.background = "rgba(255,255,255,0.06)"; }}
+                    onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,0.08)"; e.target.style.background = "rgba(255,255,255,0.04)"; }}
+                  />
+                </div>
+              </div>
+
+              {/* Password */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-right" style={{ color: "#9898a8", direction: "rtl" }}>
+                  كلمة المرور
+                </label>
+                <div className="relative">
+                  <Lock
+                    className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none"
+                    style={{ color: "#52526a" }}
+                  />
+                  <input
+                    id="tolzy-password"
+                    type={showPass ? "text" : "password"}
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={e => { setPassword(e.target.value); setError(null); }}
+                    placeholder="••••••••••"
+                    required
+                    className="w-full rounded-xl pl-11 pr-11 py-3 text-sm text-white placeholder:text-[#3d3d52] outline-none transition-all"
+                    style={{
+                      background: "rgba(255,255,255,0.04)",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                    }}
+                    onFocus={e => { e.target.style.borderColor = "rgba(129,140,248,0.5)"; e.target.style.background = "rgba(255,255,255,0.06)"; }}
+                    onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,0.08)"; e.target.style.background = "rgba(255,255,255,0.04)"; }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPass(v => !v)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 transition-colors"
+                    style={{ color: "#52526a" }}
+                    onMouseEnter={e => (e.currentTarget.style.color = "#9898a8")}
+                    onMouseLeave={e => (e.currentTarget.style.color = "#52526a")}
+                  >
+                    {showPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Error message */}
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex items-start gap-2.5 rounded-xl px-4 py-3 text-right"
+                  style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", direction: "rtl" }}
+                >
+                  <AlertCircle className="h-4 w-4 text-red-400 shrink-0 mt-0.5" />
+                  <p className="text-xs text-red-300 leading-relaxed">{error}</p>
+                </motion.div>
+              )}
+
+              {/* Submit */}
+              <button
+                id="login-submit-btn"
+                type="submit"
+                disabled={loading || !email.trim() || !password}
+                className="w-full flex items-center justify-center gap-2.5 rounded-2xl py-3 text-sm font-bold text-[#050507] transition-all disabled:opacity-40 disabled:cursor-not-allowed btn-shimmer mt-2"
+                style={{
+                  background: "linear-gradient(135deg, #fff 0%, #e8e8ff 100%)",
+                  boxShadow: loading ? "none" : "0 4px 24px -6px rgba(255,255,255,0.25)",
+                }}
+              >
+                {loading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4 text-indigo-600" />
+                    تسجيل الدخول
+                    <ArrowRight className="h-4 w-4 text-indigo-600" />
+                  </>
+                )}
+              </button>
+            </form>
+
+            {/* Divider */}
+            <div className="mt-6 flex items-center gap-3">
+              <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.05)" }} />
+              <span className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: "#3d3d52" }}>أو</span>
+              <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.05)" }} />
+            </div>
+
+            {/* Google Sign In */}
             <button
-              id="login-submit-btn"
-              type="submit"
-              disabled={loading || !email.trim() || !password}
-              className="w-full flex items-center justify-center gap-2.5 rounded-2xl py-3 text-sm font-bold text-[#050507] transition-all disabled:opacity-40 disabled:cursor-not-allowed btn-shimmer mt-2"
+              onClick={handleGoogleLogin}
+              disabled={loading}
+              className="w-full flex items-center justify-center gap-2.5 rounded-2xl py-3 text-sm font-semibold transition-all disabled:opacity-40 mt-4"
               style={{
-                background: "linear-gradient(135deg, #fff 0%, #e8e8ff 100%)",
-                boxShadow: loading ? "none" : "0 4px 24px -6px rgba(255,255,255,0.25)",
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                color: "#fff",
               }}
+              onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
             >
               {loading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <>
-                  <Sparkles className="h-4 w-4 text-indigo-600" />
-                  تسجيل الدخول
-                  <ArrowRight className="h-4 w-4 text-indigo-600" />
+                  <GoogleIcon />
+                  <span>تسجيل الدخول بواسطة Google</span>
                 </>
               )}
             </button>
-          </form>
 
-          {/* Divider */}
-          <div className="mt-6 flex items-center gap-3">
-            <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.05)" }} />
-            <span className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: "#3d3d52" }}>أو</span>
-            <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.05)" }} />
+            {/* Footer note */}
+            <p className="mt-6 text-center text-[12px] leading-relaxed" style={{ color: "#52526a", direction: "rtl" }}>
+              لا تملك حساباً؟{" "}
+              <a
+                href="https://tolzy.me/auth"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-bold transition-colors"
+                style={{ color: "#818cf8" }}
+                onMouseEnter={e => (e.currentTarget.style.color = "#a5b4fc")}
+                onMouseLeave={e => (e.currentTarget.style.color = "#818cf8")}
+              >
+                أنشئ حساباً عبر tolzy.me/auth ←
+              </a>
+            </p>
           </div>
 
-          {/* Google Sign In */}
-          <button
-            onClick={handleGoogleLogin}
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-2.5 rounded-2xl py-3 text-sm font-semibold transition-all disabled:opacity-40 mt-4"
-            style={{
-              background: "rgba(255,255,255,0.04)",
-              border: "1px solid rgba(255,255,255,0.08)",
-              color: "#fff",
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
-          >
-            {loading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <>
-                <GoogleIcon />
-                <span>تسجيل الدخول بواسطة Google</span>
-              </>
-            )}
-          </button>
-
-          {/* Footer note */}
-          <p className="mt-6 text-center text-[12px] leading-relaxed" style={{ color: "#52526a", direction: "rtl" }}>
-            لا تملك حساباً؟{" "}
-            <a
-              href="https://tolzy.me/auth"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-bold transition-colors"
-              style={{ color: "#818cf8" }}
-              onMouseEnter={e => (e.currentTarget.style.color = "#a5b4fc")}
-              onMouseLeave={e => (e.currentTarget.style.color = "#818cf8")}
-            >
-              أنشئ حساباً عبر tolzy.me/auth ←
-            </a>
+          {/* Powered-by note */}
+          <p className="mt-5 text-center text-[10px]" style={{ color: "#3d3d52" }}>
+            مشغّل بواسطة <span className="text-[#52526a] font-semibold">TOLZY Labs</span> · جميع الحقوق محفوظة
           </p>
-        </div>
-
-        {/* Powered-by note */}
-        <p className="mt-5 text-center text-[10px]" style={{ color: "#3d3d52" }}>
-          مشغّل بواسطة <span className="text-[#52526a] font-semibold">TOLZY Labs</span> · جميع الحقوق محفوظة
-        </p>
-      </motion.div>
+        </motion.div>
+      )}
     </main>
   );
 }
