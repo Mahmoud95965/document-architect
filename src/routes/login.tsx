@@ -189,7 +189,8 @@ function LoginPage() {
       <div className="pointer-events-none absolute inset-0 grid-bg opacity-40" />
 
       {/* Glow blobs */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden hidden md:block">
+
         <div
           className="hero-glow-blob"
           style={{

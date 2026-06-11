@@ -1852,9 +1852,9 @@ function Index() {
               className="relative max-w-lg w-full rounded-3xl p-8 border border-white/10 shadow-2xl overflow-hidden bg-gradient-to-b from-[#0A0A0F]/95 to-[#050507]/98 text-right"
               style={{ direction: "rtl" }}
             >
-              {/* Subtle background glow blobs inside modal */}
+              {/* Subtle background glow blobs inside modal (hidden on mobile for performance) */}
               <div 
-                className="absolute top-0 right-0 w-[250px] h-[250px] rounded-full blur-[90px] pointer-events-none transition-all duration-500" 
+                className="absolute top-0 right-0 w-[250px] h-[250px] rounded-full blur-[90px] pointer-events-none transition-all duration-500 hidden md:block" 
                 style={{ background: AXIOM_UPDATES[v2ModalSlide].glowColor }} 
               />
               
@@ -2215,8 +2215,8 @@ function Index() {
 
           {/* Textarea wrapped with elegant soft blue faint ripples */}
           <div className="relative">
-            {/* Soft Concentric Ambient Glow Rings */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
+            {/* Soft Concentric Ambient Glow Rings (hidden on mobile for performance) */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0 hidden md:flex">
               <motion.div
                 animate={{ scale: [1, 1.06, 1], opacity: [0.35, 0.55, 0.35] }}
                 transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
