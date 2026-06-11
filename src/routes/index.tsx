@@ -2137,7 +2137,7 @@ function Index() {
         >
           <div className="glow-dot" style={{ boxShadow: "0 0 10px 3px rgba(110,231,183,0.5)" }} />
           <span className="text-[11px] font-bold tracking-wider" style={{ color: "#c7d2fe" }}>
-            Powered by Gemini 2.0 Flash · المعالجة الفورية
+            Powered by AXIOM  · المعالجة الفورية
           </span>
         </motion.div>
 
@@ -2285,7 +2285,7 @@ function Index() {
                     style={{ background: "rgba(255,255,255,0.02)" }}
                   >
                     <Sparkles className="h-3.5 w-3.5 text-indigo-400" />
-                    <span>Gemini 2.0 Flash</span>
+                    <span>AXIOM</span>
                   </div>
 
                   {/* Submit Action */}

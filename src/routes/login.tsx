@@ -1,10 +1,17 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-import { motion } from "framer-motion";
+import { 
+  signInWithEmailAndPassword, 
+  GoogleAuthProvider, 
+  signInWithPopup, 
+  createUserWithEmailAndPassword 
+} from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
+import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Mail, Lock, Loader2, AlertCircle, Eye, EyeOff, ArrowRight, LogOut } from "lucide-react";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/useAuth";
+
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
@@ -43,11 +50,15 @@ function LoginPage() {
   const { user, plan, loading: authLoading, signOut } = useAuth();
   const navigate = useNavigate();
 
-  const [email,       setEmail]       = useState("");
-  const [password,    setPassword]    = useState("");
-  const [showPass,    setShowPass]    = useState(false);
-  const [loading,     setLoading]     = useState(false);
-  const [error,       setError]       = useState<string | null>(null);
+  const [activeTab,       setActiveTab]       = useState<"login" | "register">("login");
+  const [email,           setEmail]           = useState("");
+  const [password,        setPassword]        = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPass,        setShowPass]        = useState(false);
+  const [showConfirmPass, setShowConfirmPass] = useState(false);
+  const [loading,         setLoading]         = useState(false);
+  const [error,           setError]           = useState<string | null>(null);
+
 
   // Already logged in as pro → go straight to app
   useEffect(() => {
@@ -84,6 +95,59 @@ function LoginPage() {
       }
     } finally {
       setLoading(false);
+    }
+  }  async function handleRegister(e: React.FormEvent) {
+    e.preventDefault();
+    if (!email.trim() || !password || !confirmPassword) return;
+
+    if (password.length < 6) {
+      setError("يجب أن تكون كلمة المرور 6 أحرف على الأقل.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("كلمتا المرور غير متطابقتين.");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email.trim(), password);
+      const registeredUser = userCredential.user;
+
+      // Create a user document in Firestore with 'free' plan
+      await setDoc(doc(db, "users", registeredUser.uid), {
+        email: registeredUser.email,
+        plan: "free",
+        createdAt: new Date().toISOString(),
+        filesCountToday: 0,
+        lastGenerationDate: new Date().toISOString().split("T")[0],
+      }, { merge: true });
+    } catch (err: unknown) {
+      const code = (err as { code?: string }).code ?? "";
+      if (code === "auth/email-already-in-use") {
+        setError("البريد الإلكتروني هذا مستخدم بالفعل.");
+      } else if (code === "auth/invalid-email") {
+        setError("البريد الإلكتروني غير صالح.");
+      } else if (code === "auth/weak-password") {
+        setError("كلمة المرور ضعيفة جداً. يجب أن تكون 6 أحرف على الأقل.");
+      } else if (code === "auth/network-request-failed") {
+        setError("تعذّر الاتصال بالشبكة. تحقق من الإنترنت وأعد المحاولة.");
+      } else {
+        setError("حدث خطأ أثناء إنشاء الحساب. حاول مجدداً.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    if (activeTab === "login") {
+      handleLogin(e);
+    } else {
+      handleRegister(e);
     }
   }
 
@@ -238,51 +302,133 @@ function LoginPage() {
           initial={{ opacity: 0, y: 28, scale: 0.97 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-          className="relative z-10 w-full max-w-md"
+          className="relative z-10 w-full max-w-md animate-float-up"
         >
-          {/* Top accent bar */}
-          <div className="h-px w-full mb-0" style={{ background: "linear-gradient(90deg, transparent, rgba(99,102,241,0.6), transparent)" }} />
+          {/* Top accent bar - Dynamic color depending on activeTab */}
+          <div 
+            className="h-px w-full mb-0 transition-all duration-500" 
+            style={{ 
+              background: activeTab === "login" 
+                ? "linear-gradient(90deg, transparent, rgba(99,102,241,0.6), transparent)" 
+                : "linear-gradient(90deg, transparent, rgba(16,185,129,0.6), transparent)" 
+            }} 
+          />
 
           <div
-            className="rounded-3xl p-8 sm:p-10"
+            className="rounded-3xl p-8 sm:p-10 relative overflow-hidden"
             style={{
               background: "linear-gradient(145deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%)",
               border: "1px solid rgba(255,255,255,0.08)",
               boxShadow: "0 40px 100px -30px rgba(0,0,0,0.9), 0 0 0 1px rgba(255,255,255,0.03) inset",
             }}
           >
+            {/* Ambient inner glow */}
+            <div 
+              className="absolute top-0 right-0 w-[150px] h-[150px] rounded-full blur-[80px] pointer-events-none transition-all duration-500" 
+              style={{ 
+                background: activeTab === "login"
+                  ? "radial-gradient(circle, rgba(99,102,241,0.08) 0%, transparent 70%)"
+                  : "radial-gradient(circle, rgba(16,185,129,0.08) 0%, transparent 70%)"
+              }} 
+            />
+
             {/* Logo + heading */}
-            <div className="flex flex-col items-center text-center mb-8">
+            <div className="flex flex-col items-center text-center mb-6 relative z-10">
               <div
-                className="relative flex h-16 w-16 items-center justify-center rounded-2xl mb-5"
-                style={{ background: "linear-gradient(135deg, #1e1e2e, #13131a)", border: "1px solid rgba(255,255,255,0.1)" }}
+                className="relative flex h-16 w-16 items-center justify-center rounded-2xl mb-5 transition-all duration-500"
+                style={{ 
+                  background: "linear-gradient(135deg, #1e1e2e 0%, #0c0c14 100%)", 
+                  border: activeTab === "login" 
+                    ? "1px solid rgba(129, 140, 248, 0.25)" 
+                    : "1px solid rgba(52, 211, 153, 0.25)",
+                  boxShadow: activeTab === "login"
+                    ? "0 10px 30px -5px rgba(99, 102, 241, 0.2)"
+                    : "0 10px 30px -5px rgba(16, 185, 129, 0.2)"
+                }}
               >
-                <Sparkles className="h-7 w-7 text-indigo-400" />
+                <Sparkles className={`h-7 w-7 transition-colors duration-500 animate-pulse ${activeTab === "login" ? "text-indigo-400" : "text-emerald-400"}`} />
                 {/* Animated ring */}
                 <div
                   className="absolute inset-0 rounded-2xl border-glow"
-                  style={{ opacity: 0.5 }}
+                  style={{ opacity: 0.6 }}
                 />
               </div>
 
-              <h1 className="text-2xl font-black text-white tracking-tight">تسجيل الدخول</h1>
-              <p className="mt-1.5 text-sm" style={{ color: "#6b6b7b" }}>
-                سجّل دخولك للوصول إلى{" "}
-                <span className="font-semibold" style={{ color: "#a5b4fc" }}>TOLZY Flow</span>
+              <h1 className="text-2xl font-black text-white tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-slate-400 mb-2">
+                {activeTab === "login" ? "تسجيل الدخول" : "إنشاء حساب جديد"}
+              </h1>
+              <p className="text-xs" style={{ color: "#8f8f9f" }}>
+                {activeTab === "login" ? "سجّل دخولك للوصول إلى منصة" : "أنشئ حساباً مجانياً للبدء في استخدام"}{" "}
+                <span className="font-extrabold" style={{ color: activeTab === "login" ? "#a5b4fc" : "#6ee7b7" }}>AXIOM Flow</span>
               </p>
             </div>
 
+            {/* Tabs switcher */}
+            <div 
+              className="flex p-1 rounded-2xl mb-6 relative z-10"
+              style={{ 
+                background: "rgba(255, 255, 255, 0.02)",
+                border: "1px solid rgba(255, 255, 255, 0.05)",
+                width: "100%",
+                direction: "rtl"
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => { setActiveTab("login"); setError(null); }}
+                className="flex-1 py-2.5 text-xs font-bold rounded-xl transition-all relative cursor-pointer"
+                style={{
+                  color: activeTab === "login" ? "#fff" : "#71717a",
+                }}
+              >
+                {activeTab === "login" && (
+                  <motion.div
+                    layoutId="active-tab-bg"
+                    className="absolute inset-0 rounded-xl"
+                    style={{
+                      background: "linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(79,70,229,0.18) 100%)",
+                      border: "1px solid rgba(129, 140, 248, 0.2)",
+                    }}
+                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                  />
+                )}
+                <span className="relative z-10">تسجيل الدخول</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => { setActiveTab("register"); setError(null); }}
+                className="flex-1 py-2.5 text-xs font-bold rounded-xl transition-all relative cursor-pointer"
+                style={{
+                  color: activeTab === "register" ? "#fff" : "#71717a",
+                }}
+              >
+                {activeTab === "register" && (
+                  <motion.div
+                    layoutId="active-tab-bg"
+                    className="absolute inset-0 rounded-xl"
+                    style={{
+                      background: "linear-gradient(135deg, rgba(16,185,129,0.12) 0%, rgba(5,150,105,0.18) 100%)",
+                      border: "1px solid rgba(52, 211, 153, 0.2)",
+                    }}
+                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                  />
+                )}
+                <span className="relative z-10">إنشاء حساب</span>
+              </button>
+            </div>
+
             {/* Form */}
-            <form onSubmit={handleLogin} className="space-y-4" noValidate>
+            <form onSubmit={handleSubmit} className="space-y-5 relative z-10" noValidate>
 
               {/* Email */}
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <label className="block text-xs font-semibold text-right" style={{ color: "#9898a8", direction: "rtl" }}>
                   البريد الإلكتروني
                 </label>
                 <div className="relative">
                   <Mail
-                    className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none"
+                    className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none transition-colors duration-300"
                     style={{ color: "#52526a" }}
                   />
                   <input
@@ -293,49 +439,65 @@ function LoginPage() {
                     onChange={e => { setEmail(e.target.value); setError(null); }}
                     placeholder="name@example.com"
                     required
-                    className="w-full rounded-xl pl-11 pr-4 py-3 text-sm text-white placeholder:text-[#3d3d52] outline-none transition-all"
+                    className="w-full rounded-2xl pl-11 pr-4 py-3.5 text-sm text-white placeholder:text-[#3d3d52] outline-none transition-all duration-300"
                     style={{
-                      background: "rgba(255,255,255,0.04)",
-                      border: "1px solid rgba(255,255,255,0.08)",
+                      background: "rgba(255,255,255,0.02)",
+                      border: "1px solid rgba(255,255,255,0.06)",
                     }}
-                    onFocus={e => { e.target.style.borderColor = "rgba(129,140,248,0.5)"; e.target.style.background = "rgba(255,255,255,0.06)"; }}
-                    onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,0.08)"; e.target.style.background = "rgba(255,255,255,0.04)"; }}
+                    onFocus={e => { 
+                      e.target.style.borderColor = activeTab === "login" ? "rgba(129,140,248,0.4)" : "rgba(52,211,153,0.4)"; 
+                      e.target.style.background = "rgba(255,255,255,0.04)";
+                      e.target.style.boxShadow = activeTab === "login" ? "0 0 20px -3px rgba(99,102,241,0.15)" : "0 0 20px -3px rgba(16,185,129,0.15)";
+                    }}
+                    onBlur={e => { 
+                      e.target.style.borderColor = "rgba(255,255,255,0.06)"; 
+                      e.target.style.background = "rgba(255,255,255,0.02)";
+                      e.target.style.boxShadow = "none";
+                    }}
                   />
                 </div>
               </div>
 
               {/* Password */}
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <label className="block text-xs font-semibold text-right" style={{ color: "#9898a8", direction: "rtl" }}>
                   كلمة المرور
                 </label>
                 <div className="relative">
                   <Lock
-                    className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none"
+                    className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none transition-colors duration-300"
                     style={{ color: "#52526a" }}
                   />
                   <input
                     id="tolzy-password"
                     type={showPass ? "text" : "password"}
-                    autoComplete="current-password"
+                    autoComplete={activeTab === "login" ? "current-password" : "new-password"}
                     value={password}
                     onChange={e => { setPassword(e.target.value); setError(null); }}
                     placeholder="••••••••••"
                     required
-                    className="w-full rounded-xl pl-11 pr-11 py-3 text-sm text-white placeholder:text-[#3d3d52] outline-none transition-all"
+                    className="w-full rounded-2xl pl-11 pr-11 py-3.5 text-sm text-white placeholder:text-[#3d3d52] outline-none transition-all duration-300"
                     style={{
-                      background: "rgba(255,255,255,0.04)",
-                      border: "1px solid rgba(255,255,255,0.08)",
+                      background: "rgba(255,255,255,0.02)",
+                      border: "1px solid rgba(255,255,255,0.06)",
                     }}
-                    onFocus={e => { e.target.style.borderColor = "rgba(129,140,248,0.5)"; e.target.style.background = "rgba(255,255,255,0.06)"; }}
-                    onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,0.08)"; e.target.style.background = "rgba(255,255,255,0.04)"; }}
+                    onFocus={e => { 
+                      e.target.style.borderColor = activeTab === "login" ? "rgba(129,140,248,0.4)" : "rgba(52,211,153,0.4)"; 
+                      e.target.style.background = "rgba(255,255,255,0.04)";
+                      e.target.style.boxShadow = activeTab === "login" ? "0 0 20px -3px rgba(99,102,241,0.15)" : "0 0 20px -3px rgba(16,185,129,0.15)";
+                    }}
+                    onBlur={e => { 
+                      e.target.style.borderColor = "rgba(255,255,255,0.06)"; 
+                      e.target.style.background = "rgba(255,255,255,0.02)";
+                      e.target.style.boxShadow = "none";
+                    }}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPass(v => !v)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 transition-colors"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 transition-colors cursor-pointer"
                     style={{ color: "#52526a" }}
-                    onMouseEnter={e => (e.currentTarget.style.color = "#9898a8")}
+                    onMouseEnter={e => (e.currentTarget.style.color = activeTab === "login" ? "#818cf8" : "#34d399")}
                     onMouseLeave={e => (e.currentTarget.style.color = "#52526a")}
                   >
                     {showPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -343,13 +505,71 @@ function LoginPage() {
                 </div>
               </div>
 
+              {/* Confirm Password (only for register) */}
+              <AnimatePresence>
+                {activeTab === "register" && (
+                  <motion.div 
+                    key="confirm-password"
+                    initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                    animate={{ opacity: 1, height: "auto", marginTop: 8 }}
+                    exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                    transition={{ duration: 0.25, ease: "easeInOut" }}
+                    className="space-y-2 overflow-hidden"
+                  >
+                    <label className="block text-xs font-semibold text-right" style={{ color: "#9898a8", direction: "rtl" }}>
+                      تأكيد كلمة المرور
+                    </label>
+                    <div className="relative">
+                      <Lock
+                        className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none transition-colors duration-300"
+                        style={{ color: "#52526a" }}
+                      />
+                      <input
+                        id="tolzy-confirm-password"
+                        type={showConfirmPass ? "text" : "password"}
+                        autoComplete="new-password"
+                        value={confirmPassword}
+                        onChange={e => { setConfirmPassword(e.target.value); setError(null); }}
+                        placeholder="••••••••••"
+                        required
+                        className="w-full rounded-2xl pl-11 pr-11 py-3.5 text-sm text-white placeholder:text-[#3d3d52] outline-none transition-all duration-300"
+                        style={{
+                          background: "rgba(255,255,255,0.02)",
+                          border: "1px solid rgba(255,255,255,0.06)",
+                        }}
+                        onFocus={e => { 
+                          e.target.style.borderColor = "rgba(52,211,153,0.4)"; 
+                          e.target.style.background = "rgba(255,255,255,0.04)";
+                          e.target.style.boxShadow = "0 0 20px -3px rgba(16,185,129,0.15)";
+                        }}
+                        onBlur={e => { 
+                          e.target.style.borderColor = "rgba(255,255,255,0.06)"; 
+                          e.target.style.background = "rgba(255,255,255,0.02)";
+                          e.target.style.boxShadow = "none";
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPass(v => !v)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 transition-colors cursor-pointer"
+                        style={{ color: "#52526a" }}
+                        onMouseEnter={e => (e.currentTarget.style.color = "#34d399")}
+                        onMouseLeave={e => (e.currentTarget.style.color = "#52526a")}
+                      >
+                        {showConfirmPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
               {/* Error message */}
               {error && (
                 <motion.div
                   initial={{ opacity: 0, y: -6 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="flex items-start gap-2.5 rounded-xl px-4 py-3 text-right"
-                  style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", direction: "rtl" }}
+                  className="flex items-start gap-2.5 rounded-2xl px-4 py-3.5 text-right"
+                  style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.15)", direction: "rtl" }}
                 >
                   <AlertCircle className="h-4 w-4 text-red-400 shrink-0 mt-0.5" />
                   <p className="text-xs text-red-300 leading-relaxed">{error}</p>
@@ -360,29 +580,41 @@ function LoginPage() {
               <button
                 id="login-submit-btn"
                 type="submit"
-                disabled={loading || !email.trim() || !password}
-                className="w-full flex items-center justify-center gap-2.5 rounded-2xl py-3 text-sm font-bold text-[#050507] transition-all disabled:opacity-40 disabled:cursor-not-allowed btn-shimmer mt-2"
+                disabled={loading || !email.trim() || !password || (activeTab === "register" && !confirmPassword)}
+                className="w-full flex items-center justify-center gap-2.5 rounded-2xl py-3.5 text-sm font-bold text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed btn-shimmer mt-3 shadow-lg cursor-pointer"
                 style={{
-                  background: "linear-gradient(135deg, #fff 0%, #e8e8ff 100%)",
-                  boxShadow: loading ? "none" : "0 4px 24px -6px rgba(255,255,255,0.25)",
+                  background: activeTab === "login" 
+                    ? "linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)" 
+                    : "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+                  boxShadow: loading 
+                    ? "none" 
+                    : activeTab === "login" 
+                      ? "0 4px 25px -5px rgba(99,102,241,0.4)"
+                      : "0 4px 25px -5px rgba(16,185,129,0.4)",
                 }}
               >
                 {loading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
+                ) : activeTab === "login" ? (
+                  <>
+                    <Sparkles className="h-4 w-4 text-indigo-200" />
+                    تسجيل الدخول للمنصة
+                    <ArrowRight className="h-4 w-4 text-indigo-200" />
+                  </>
                 ) : (
                   <>
-                    <Sparkles className="h-4 w-4 text-indigo-600" />
-                    تسجيل الدخول
-                    <ArrowRight className="h-4 w-4 text-indigo-600" />
+                    <Sparkles className="h-4 w-4 text-emerald-200" />
+                    إنشاء حساب جديد
+                    <ArrowRight className="h-4 w-4 text-emerald-200" />
                   </>
                 )}
               </button>
             </form>
 
             {/* Divider */}
-            <div className="mt-6 flex items-center gap-3">
+            <div className="mt-6 flex items-center gap-3 relative z-10">
               <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.05)" }} />
-              <span className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: "#3d3d52" }}>أو</span>
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-[#3d3d52]">أو</span>
               <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.05)" }} />
             </div>
 
@@ -390,47 +622,71 @@ function LoginPage() {
             <button
               onClick={handleGoogleLogin}
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2.5 rounded-2xl py-3 text-sm font-semibold transition-all disabled:opacity-40 mt-4"
+              className="w-full flex items-center justify-center gap-2.5 rounded-2xl py-3.5 text-sm font-semibold transition-all disabled:opacity-40 mt-4 cursor-pointer relative z-10"
               style={{
-                background: "rgba(255,255,255,0.04)",
-                border: "1px solid rgba(255,255,255,0.08)",
+                background: "rgba(255,255,255,0.02)",
+                border: "1px solid rgba(255,255,255,0.06)",
                 color: "#fff",
               }}
-              onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
+              onMouseEnter={e => { 
+                e.currentTarget.style.background = "rgba(255,255,255,0.05)"; 
+                e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)";
+              }}
+              onMouseLeave={e => { 
+                e.currentTarget.style.background = "rgba(255,255,255,0.02)"; 
+                e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)";
+              }}
             >
               {loading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <>
                   <GoogleIcon />
-                  <span>تسجيل الدخول بواسطة Google</span>
+                  <span>متابعة بواسطة Google</span>
                 </>
               )}
             </button>
 
-            {/* Footer note */}
-            <p className="mt-6 text-center text-[12px] leading-relaxed" style={{ color: "#52526a", direction: "rtl" }}>
-              لا تملك حساباً؟{" "}
-              <a
-                href="https://tolzy.me/auth"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-bold transition-colors"
-                style={{ color: "#818cf8" }}
-                onMouseEnter={e => (e.currentTarget.style.color = "#a5b4fc")}
-                onMouseLeave={e => (e.currentTarget.style.color = "#818cf8")}
-              >
-                أنشئ حساباً عبر tolzy.me/auth ←
-              </a>
+            {/* Footer note switcher */}
+            <p className="mt-6 text-center text-[12px] leading-relaxed relative z-10" style={{ color: "#52526a", direction: "rtl" }}>
+              {activeTab === "login" ? (
+                <>
+                  لا تملك حساباً؟{" "}
+                  <button
+                    type="button"
+                    onClick={() => { setActiveTab("register"); setError(null); }}
+                    className="font-bold transition-colors cursor-pointer"
+                    style={{ color: "#818cf8" }}
+                    onMouseEnter={e => (e.currentTarget.style.color = "#a5b4fc")}
+                    onMouseLeave={e => (e.currentTarget.style.color = "#818cf8")}
+                  >
+                    سجل حساباً جديداً من هنا ←
+                  </button>
+                </>
+              ) : (
+                <>
+                  لديك حساب بالفعل؟{" "}
+                  <button
+                    type="button"
+                    onClick={() => { setActiveTab("login"); setError(null); }}
+                    className="font-bold transition-colors cursor-pointer"
+                    style={{ color: "#818cf8" }}
+                    onMouseEnter={e => (e.currentTarget.style.color = "#a5b4fc")}
+                    onMouseLeave={e => (e.currentTarget.style.color = "#818cf8")}
+                  >
+                    سجّل دخولك من هنا ←
+                  </button>
+                </>
+              )}
             </p>
           </div>
 
           {/* Powered-by note */}
-          <p className="mt-5 text-center text-[10px]" style={{ color: "#3d3d52" }}>
-            مشغّل بواسطة <span className="text-[#52526a] font-semibold">TOLZY Labs</span> · جميع الحقوق محفوظة
+          <p className="mt-5 text-center text-[10px] relative z-10" style={{ color: "#3d3d52" }}>
+            مشغّل بواسطة <span className="text-[#52526a] font-semibold">AXIOM Labs</span> · جميع الحقوق محفوظة
           </p>
         </motion.div>
+
       )}
     </main>
   );
