@@ -51,16 +51,16 @@
   --popover-foreground: #0f172a;
 
   /* ── Primary: Indigo/Blue (Word) ── */
-  --primary: oklch(0.62 0.22 265);
+  --primary: oklch(0.58 0.22 265);
   --primary-foreground: #ffffff;
 
   /* ── Secondary ── */
-  --secondary: #f1f5f9;
+  --secondary: #e2e8f0;
   --secondary-foreground: #0f172a;
 
   /* ── Muted ── */
   --muted: #f1f5f9;
-  --muted-foreground: #64748b;
+  --muted-foreground: #475569;
 
   /* ── Accent: Gold/Orange ── */
   --accent: oklch(0.72 0.21 45);
@@ -71,18 +71,18 @@
   --destructive-foreground: #ffffff;
 
   /* ── Borders / Inputs ── */
-  --border: rgba(0, 0, 0, 0.1);
-  --input: rgba(0, 0, 0, 0.1);
-  --ring: oklch(0.62 0.22 265);
+  --border: rgba(15, 23, 42, 0.12);
+  --input: rgba(15, 23, 42, 0.08);
+  --ring: oklch(0.58 0.22 265);
 
   /* ── Glow Colors ── */
-  --glow: #6366f1;
-  --glow-2: #f97316;
+  --glow: #4f46e5;
+  --glow-2: #ea580c;
 
   /* ── Feature Colors ── */
-  --word-color: #6366f1;
-  --excel-color: #10b981;
-  --ppt-color: #f97316;
+  --word-color: #4f46e5;
+  --excel-color: #059669;
+  --ppt-color: #ea580c;
 
   /* ── Excel Preview ── */
   --excel-grid-bg: #ffffff;
@@ -90,8 +90,8 @@
   --excel-row-odd: #f8fafc;
   --excel-row-hover: #f1f5f9;
   --excel-header-letter-bg: #f1f5f9;
-  --excel-header-letter-fg: #64748b;
-  --excel-border: #e2e8f0;
+  --excel-header-letter-fg: #475569;
+  --excel-border: #cbd5e1;
   --excel-formula-bar-bg: #ffffff;
   --excel-sheet-tabs-bg: #f8fafc;
   --excel-sheet-tab-active-bg: #ffffff;

@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FileText, Sparkles, Download, ArrowRight, Trash2, Plus,
@@ -21,8 +21,11 @@ import {
 import { generateAndDownloadDocx } from "@/lib/buildDocx";
 import { generateAndDownloadExcel } from "@/lib/buildExcel";
 import { generateAndDownloadPptx, getUnsplashImageUrl } from "@/lib/buildPptx";
-import { getProjects, getProject, saveProject, deleteProject, type SavedProject } from "@/lib/projects";
+import { getProjects, getProject, saveProject, deleteProject, fetchProjectsFromSupabase, type SavedProject } from "@/lib/projects";
 import { isProjectArabic } from "@/lib/lang";
+import { GenerationProgressModal } from "@/components/GenerationProgressModal";
+import { ProjectsDashboard } from "@/components/ProjectsDashboard";
+import { ShowcaseGallery } from "@/components/ShowcaseGallery";
 import { z } from "zod";
 
 const searchSchema = z.object({
@@ -287,15 +290,25 @@ function Index() {
   const [activeSheetIdx, setActiveSheetIdx] = useState(0);
   const [activeSlideIdx, setActiveSlideIdx] = useState(0);
 
+  async function refreshProjects(uid?: string) {
+    const targetUid = uid || user?.uid;
+    if (targetUid) {
+      const fetched = await fetchProjectsFromSupabase(targetUid);
+      setProjects(fetched);
+    } else {
+      setProjects(getProjects());
+    }
+  }
+
   useEffect(() => {
     document.documentElement.classList.add("dark");
-    setProjects(getProjects());
-    
+    refreshProjects(user?.uid);
+
     const hasSeenV2 = localStorage.getItem("tolzy_v2_dismissed");
     if (!hasSeenV2) {
       setShowV2Modal(true);
     }
-  }, []);
+  }, [user?.uid]);
 
   useEffect(() => {
     if (projectId) {
@@ -438,17 +451,18 @@ function Index() {
     try {
       const data = await generate({ data: { prompt, type: mode } });
       const id   = crypto.randomUUID();
-      const proj =
+      const proj = await (
         mode === "excel"
-          ? saveProject({ id, title: data.title, type: "excel", sheets: data.sheets, prompt })
+          ? saveProject({ id, title: data.title, type: "excel", sheets: data.sheets, prompt }, user?.uid)
           : mode === "presentation"
-          ? saveProject({ id, title: data.title, subtitle: data.subtitle, type: "presentation", slides: data.slides as FreestyleSlide[], prompt })
-          : saveProject({ id, title: data.title, subtitle: data.subtitle, type: "word", sections: data.sections, prompt });
+          ? saveProject({ id, title: data.title, subtitle: data.subtitle, type: "presentation", slides: data.slides as FreestyleSlide[], prompt }, user?.uid)
+          : saveProject({ id, title: data.title, subtitle: data.subtitle, type: "word", sections: data.sections, prompt }, user?.uid)
+      );
       
       // Persist generated file limit count
       await incrementDailyFiles();
 
-      setProjects(getProjects());
+      refreshProjects();
       navigate({ search: { projectId: proj.id } });
       toast.success("تم التصميم بنجاح!");
     } catch (e: unknown) {
@@ -479,14 +493,15 @@ function Index() {
       const updated = await editWithAI({
         data: { currentDocument: currentDoc, instruction, type: activeProject.type },
       });
-      const updatedProj =
+      const updatedProj = await (
         activeProject.type === "excel"
-          ? saveProject({ ...activeProject, title: updated.title, sheets: updated.sheets })
+          ? saveProject({ ...activeProject, title: updated.title, sheets: updated.sheets }, user?.uid)
           : activeProject.type === "presentation"
-          ? saveProject({ ...activeProject, title: updated.title, subtitle: updated.subtitle, slides: updated.slides as FreestyleSlide[] })
-          : saveProject({ ...activeProject, title: updated.title, subtitle: updated.subtitle, sections: updated.sections });
+          ? saveProject({ ...activeProject, title: updated.title, subtitle: updated.subtitle, slides: updated.slides as FreestyleSlide[] }, user?.uid)
+          : saveProject({ ...activeProject, title: updated.title, subtitle: updated.subtitle, sections: updated.sections }, user?.uid)
+      );
       setActiveProject(updatedProj);
-      setProjects(getProjects());
+      refreshProjects();
       toast.success("تم تحديث المستند!");
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : "خطأ أثناء التعديل");
@@ -495,11 +510,11 @@ function Index() {
     }
   }
 
-  function handleManualSave() {
+  async function handleManualSave() {
     if (!activeProject) return;
-    saveProject(activeProject);
-    setProjects(getProjects());
-    toast.success("تم الحفظ محلياً.");
+    await saveProject(activeProject, user?.uid);
+    refreshProjects();
+    toast.success("تم الحفظ بنجاح.");
   }
 
   const updateProject = (fn: (p: SavedProject) => SavedProject) => {
@@ -666,13 +681,18 @@ function Index() {
     return (
       <main className="relative bg-background text-foreground flex flex-col overflow-hidden" style={{ height: "100dvh" }}>
         <Toaster theme="dark" position="top-center" richColors />
+        <GenerationProgressModal isOpen={loading} mode={mode} prompt={prompt} />
 
         {/* ── Workspace Toolbar ── */}
         <header className="shrink-0 h-14 nav-glass flex items-center justify-between px-4 gap-3 z-30">
           {/* Left: Back + Breadcrumb */}
           <div className="flex items-center gap-3 min-w-0">
             <button
-              onClick={() => { saveProject(activeProject); navigate({ search: { projectId: undefined } }); setProjects(getProjects()); }}
+              onClick={async () => {
+                if (activeProject) await saveProject(activeProject, user?.uid);
+                refreshProjects();
+                navigate({ search: { projectId: undefined } });
+              }}
               className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground dark:text-white glass px-3 py-1.5 rounded-xl transition-all hover:border-white/12 shrink-0"
             >
               <ChevronLeft className="h-3.5 w-3.5 rtl:rotate-180" />
@@ -1051,10 +1071,10 @@ function Index() {
                                 const display   = isFormula ? cell.formula : cell.value;
                                 const bg2       = cell.bg ? `#${cell.bg.replace("#", "")}28` : "transparent";
                                 
-                                // Determine text color and alignments based on language/content
+                                const valStr = cell && cell.value != null ? String(cell.value) : "";
                                 const isNumeric = 
-                                  typeof cell.value === "number" || 
-                                  (!isNaN(Number(cell.value)) && String(cell.value).trim() !== "" && !cell.value.toString().startsWith("0"));
+                                  typeof cell?.value === "number" || 
+                                  (!isNaN(Number(valStr)) && valStr.trim() !== "" && !valStr.startsWith("0"));
 
                                 const fgColor   = cell.color
                                   ? `#${cell.color.replace("#", "")}`
@@ -1840,6 +1860,7 @@ function Index() {
   return (
     <main className="relative min-h-screen text-foreground bg-background overflow-x-hidden selection:bg-indigo-500/25">
       <Toaster theme="dark" position="top-center" richColors />
+      <GenerationProgressModal isOpen={loading} mode={mode} prompt={prompt} />
 
       <AnimatePresence>
         {showV2Modal && (
@@ -1997,45 +2018,43 @@ function Index() {
         />
       </div>
 
-      {/* ── Navbar ── */}
-      <nav className="fixed top-0 inset-x-0 h-16 nav-glass z-50 flex items-center justify-between px-6">
+      {/* ── Navbar Header ── */}
+      <nav className="fixed top-0 inset-x-0 h-16 nav-glass z-50 flex items-center justify-between px-4 sm:px-8 border-b border-border/40">
         {/* Logo */}
         <div className="flex items-center gap-3">
-          <div className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-border overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-[0_0_15px_rgba(99,102,241,0.2)] bg-[#0A0A0F]">
+          <div className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-indigo-500/20 overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-[0_0_20px_rgba(99,102,241,0.3)] bg-[#0A0A0F] shadow-sm">
             <img src="/logo.jpg" alt="TOLZY Flow Logo" className="w-full h-full object-cover" />
-            <div className="absolute inset-0 rounded-xl border border-border/50 pointer-events-none" />
+            <div className="absolute inset-0 rounded-xl border border-white/10 pointer-events-none" />
           </div>
           <div>
-            <p className="text-sm font-black tracking-widest font-mono uppercase bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70 dark:from-white dark:to-white/70">TOLZY Flow</p>
-            <p className="text-[9px] text-indigo-400/80 leading-none font-medium tracking-wider mt-0.5"></p>
+            <p className="text-base font-black tracking-wider font-mono uppercase bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-800 dark:from-white dark:via-indigo-200 dark:to-white">
+              TOLZY Flow
+            </p>
+            <p className="text-[9px] text-indigo-500/90 dark:text-indigo-400/80 leading-none font-semibold tracking-wider mt-0.5">
+              PRO ARCHITECT
+            </p>
           </div>
         </div>
 
+
         {/* Right nav */}
         <div className="flex items-center gap-3">
-          
           {/* Theme Toggle */}
           <button
             onClick={() => setIsDark(!isDark)}
-            className="flex h-9 w-9 items-center justify-center rounded-full transition-all border border-black/5 dark:border-border text-slate-500 hover:text-slate-900 dark:text-slate-700 dark:text-slate-300 dark:hover:text-foreground dark:text-white"
-            style={{
-              background: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.02)",
-            }}
+            className="flex h-9 w-9 items-center justify-center rounded-full transition-all border border-border text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white bg-slate-100/80 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 active:scale-95 shadow-sm"
+            title={isDark ? "الوضع النهاري" : "الوضع الليلّي"}
           >
-            {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            {isDark ? <Sun className="h-4 w-4 text-amber-400" /> : <Moon className="h-4 w-4 text-indigo-600" />}
           </button>
 
           {/* User Profile Menu */}
           <div className="relative">
             <button
               onClick={() => setMenuOpen(prev => !prev)}
-              className="flex h-9 w-9 items-center justify-center rounded-full transition-all border border-border text-slate-700 dark:text-slate-300 hover:text-foreground dark:text-white hover:border-black/20 dark:border-white/20 active:scale-95"
-              style={{
-                background: "rgba(255,255,255,0.04)",
-                boxShadow: "0 4px 12px -2px rgba(0,0,0,0.3)"
-              }}
+              className="flex h-9 w-9 items-center justify-center rounded-full transition-all border border-border text-slate-700 dark:text-slate-200 hover:text-foreground dark:hover:text-white bg-slate-100/80 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 active:scale-95 shadow-sm"
             >
-              <User className="h-4 w-4" />
+              <User className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
             </button>
 
             <AnimatePresence>
@@ -2050,21 +2069,18 @@ function Index() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute left-0 mt-2.5 w-64 rounded-2xl border border-border z-50 p-2.5 space-y-1.5 shadow-2xl overflow-hidden"
-                    style={{
-                      background: "rgba(8, 8, 11, 0.95)",
-                      backdropFilter: "blur(20px)"
-                    }}
+                    className="absolute left-0 mt-2.5 w-64 rounded-2xl border border-border z-50 p-3 space-y-2 shadow-2xl overflow-hidden bg-white/95 dark:bg-[#0c0c12]/95 backdrop-blur-2xl text-right"
+                    style={{ direction: "rtl" }}
                   >
                     <div className="px-3 py-2 border-b border-border/50 pb-2.5">
                       <p className="text-[10px] text-muted-foreground font-semibold">حساب المستخدم</p>
-                      <p className="text-xs font-mono text-foreground dark:text-white truncate mt-0.5">{user.email}</p>
+                      <p className="text-xs font-mono font-bold text-foreground dark:text-white truncate mt-0.5">{user.email}</p>
                     </div>
 
-                    <div className="px-3 py-2 bg-black/ dark:bg-black/5 dark:bg-white/[0.02] border border-border/50 rounded-xl">
+                    <div className="px-3 py-2 bg-slate-100/80 dark:bg-white/[0.03] border border-border/50 rounded-xl">
                       <div className="flex justify-between items-center text-[10px] text-muted-foreground font-semibold">
                         <span>الباقة النشطة:</span>
-                        <span className="text-amber-400 uppercase font-extrabold font-mono">Pro Member</span>
+                        <span className="text-indigo-600 dark:text-amber-400 uppercase font-extrabold font-mono">Pro Member</span>
                       </div>
 
                       {plan !== "pro" && (
@@ -2073,13 +2089,10 @@ function Index() {
                             href="https://tolzy.me/pricing"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="w-full flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-[11px] font-bold text-[#050507] transition-all btn-shimmer mt-2"
-                            style={{
-                              background: "linear-gradient(135deg, #fff 0%, #e8e8ff 100%)",
-                            }}
+                            className="w-full flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-[11px] font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-all btn-shimmer mt-2"
                             onClick={() => setMenuOpen(false)}
                           >
-                            <Sparkles className="h-3 w-3 text-indigo-600" />
+                            <Sparkles className="h-3 w-3" />
                             ترقية إلى Pro
                           </a>
                         </div>
@@ -2092,7 +2105,7 @@ function Index() {
                         setMenuOpen(false);
                         signOut();
                       }}
-                      className="w-full flex items-center justify-between text-xs px-3 py-2 rounded-xl text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors"
+                      className="w-full flex items-center justify-between text-xs px-3 py-2 rounded-xl text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-colors font-semibold"
                     >
                       <span>تسجيل الخروج</span>
                       <LogOut className="h-3.5 w-3.5" />
@@ -2109,12 +2122,7 @@ function Index() {
               href="https://tolzy.me/pricing"
               target="_blank"
               rel="noopener noreferrer"
-              className="relative overflow-hidden text-[11px] font-bold px-4 py-2 rounded-full transition-all btn-shimmer"
-              style={{
-                background: "linear-gradient(135deg, #6366f1, #818cf8)",
-                color: "var(--foreground)",
-                boxShadow: "0 4px 20px -4px rgba(99,102,241,0.5)",
-              }}
+              className="relative overflow-hidden text-[11px] font-bold px-4 py-2 rounded-full transition-all btn-shimmer text-white bg-indigo-600 hover:bg-indigo-700 shadow-md"
             >
               ترقية إلى Ultra
             </a>
@@ -2123,23 +2131,35 @@ function Index() {
       </nav>
       <section className="relative z-10 mx-auto max-w-5xl px-6 pt-32 pb-8 text-center">
 
-        {/* Status badge */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="mx-auto mb-6 inline-flex items-center gap-2.5 rounded-full px-4 py-1.5 backdrop-blur-md transition-all duration-300 hover:scale-105"
-          style={{ 
-            background: "rgba(99,102,241,0.08)", 
-            border: "1px solid rgba(99,102,241,0.2)",
-            boxShadow: "0 4px 20px -2px rgba(99,102,241,0.15), inset 0 0 12px 1px rgba(99,102,241,0.05)"
-          }}
-        >
-          <div className="glow-dot" style={{ boxShadow: "0 0 10px 3px rgba(110,231,183,0.5)" }} />
-          <span className="text-[11px] font-bold tracking-wider" style={{ color: "#c7d2fe" }}>
-            Powered by AXIOM  · المعالجة الفورية
-          </span>
-        </motion.div>
+        {/* Status badge & Showcase jump */}
+        <div className="flex flex-wrap items-center justify-center gap-3 mb-6">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="inline-flex items-center gap-2.5 rounded-full px-4 py-1.5 backdrop-blur-md transition-all duration-300 hover:scale-105"
+            style={{ 
+              background: "rgba(99,102,241,0.08)", 
+              border: "1px solid rgba(99,102,241,0.2)",
+              boxShadow: "0 4px 20px -2px rgba(99,102,241,0.15), inset 0 0 12px 1px rgba(99,102,241,0.05)"
+            }}
+          >
+            <div className="glow-dot" style={{ boxShadow: "0 0 10px 3px rgba(110,231,183,0.5)" }} />
+            <span className="text-[11px] font-bold tracking-wider" style={{ color: "#c7d2fe" }}>
+              Powered by Kimi-K2.6 · المعالجة الفورية
+            </span>
+          </motion.div>
+
+          {plan !== "pro" && (
+            <a
+              href="/showcase"
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 text-xs font-bold transition-all hover:scale-105 shadow-sm backdrop-blur-md cursor-pointer"
+            >
+              <Sparkles className="h-3.5 w-3.5 text-emerald-400 animate-pulse" />
+              <span>⚡ استعرض نماذج القوة والتوليد الجاهزة (Showcase)</span>
+            </a>
+          )}
+        </div>
 
         {/* Main headline */}
         <motion.h1
@@ -2341,112 +2361,36 @@ function Index() {
       <section className="relative z-10 mx-auto max-w-6xl px-6 pb-24 mt-4">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 auto-rows-min">
 
-          {/* ── Card 1: Recent Projects (col-span-12) ── */}
+          {/* ── Card 1: Advanced Projects Dashboard (col-span-12) ── */}
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
-            onMouseMove={handleMouseMove}
-            className="bento-card md:col-span-12 flex flex-col min-h-[280px]"
+            className="md:col-span-12"
           >
-            {/* Card header */}
-            <div className="relative z-10 flex items-center justify-between mb-5">
-              <div className="flex items-center gap-3">
-                <div className="feature-icon" style={{ background: "rgba(99,102,241,0.15)" }}>
-                  <History className="h-5 w-5" style={{ color: "#818cf8" }} />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-foreground dark:text-white">المشاريع الأخيرة</h3>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">Recent Flows</p>
-                </div>
-              </div>
-              <span className="text-[10px] font-bold px-2.5 py-1 rounded-full" style={{ background: "rgba(255,255,255,0.06)", color: "#6b6b7b" }}>
-                {projects.length} مشروع
-              </span>
-            </div>
-
-            {/* Project list */}
-            <div className="relative z-10 flex-1 space-y-2 overflow-y-auto max-h-[170px] custom-scrollbar pr-1">
-              {projects.length === 0 ? (
-                <div className="h-full min-h-[120px] flex flex-col items-center justify-center text-center py-8 rounded-2xl" style={{ background: "rgba(255,255,255,0.02)", border: "1px dashed rgba(255,255,255,0.07)" }}>
-                  <FolderOpen className="h-8 w-8 mb-2" style={{ color: "#3d3d52" }} />
-                  <p className="text-xs font-semibold text-foreground dark:text-white">لا توجد مشاريع بعد</p>
-                  <p className="text-[10px] text-muted-foreground mt-1">ابدأ بإنشاء أول مستند الآن!</p>
-                </div>
-              ) : (
-                projects.map(proj => {
-                  const projColor = proj.type === "excel" ? "#34d399" : proj.type === "presentation" ? "#fb923c" : "#818cf8";
-                  return (
-                    <div
-                      key={proj.id}
-                      onClick={() => navigate({ search: { projectId: proj.id } })}
-                      className="group/item flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-all duration-300"
-                      style={{
-                        background: "rgba(255, 255, 255, 0.015)",
-                        borderColor: "rgba(255, 255, 255, 0.05)",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.borderColor = `${projColor}35`;
-                        e.currentTarget.style.background = `${projColor}04`;
-                        e.currentTarget.style.boxShadow = `0 10px 30px -15px ${projColor}15`;
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.05)";
-                        e.currentTarget.style.background = "rgba(255, 255, 255, 0.015)";
-                        e.currentTarget.style.boxShadow = "none";
-                      }}
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div
-                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border transition-all"
-                          style={{
-                            background: proj.type === "excel"
-                              ? "rgba(52,211,153,0.1)"
-                              : proj.type === "presentation"
-                              ? "rgba(251,146,60,0.1)"
-                              : "rgba(129,140,248,0.1)",
-                            borderColor: proj.type === "excel"
-                              ? "rgba(52,211,153,0.2)"
-                              : proj.type === "presentation"
-                              ? "rgba(251,146,60,0.2)"
-                              : "rgba(129,140,248,0.2)",
-                          }}
-                        >
-                          <ModeIcon mode={proj.type} size="h-3.5 w-3.5" />
-                        </div>
-                        <div className="min-w-0">
-                          <p 
-                            className="text-xs font-bold text-foreground dark:text-white truncate transition-colors duration-300"
-                            style={{ 
-                              // we can also transition to projColor on group hover!
-                            }}
-                          >{proj.title}</p>
-                          <div className="flex items-center gap-1.5 mt-0.5">
-                            <Clock className="h-2.5 w-2.5" style={{ color: "#52526a" }} />
-                            <p className="text-[9px]" style={{ color: "#52526a" }}>
-                              {new Date(proj.updatedAt).toLocaleDateString("ar-EG", { year: "numeric", month: "short", day: "numeric" })}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0 text-left">
-                        <TypeBadge type={proj.type} />
-                        <button
-                          onClick={(e: any) => handleDeleteProject(proj.id, e)}
-                          className="p-1.5 rounded-lg transition-all opacity-0 group-hover/item:opacity-100"
-                          style={{ color: "#6b6b7b" }}
-                          onMouseEnter={(e: any) => { (e.currentTarget as HTMLElement).style.color = "#ef4444"; (e.currentTarget as HTMLElement).style.background = "rgba(239,68,68,0.1)"; }}
-                          onMouseLeave={(e: any) => { (e.currentTarget as HTMLElement).style.color = "#6b6b7b"; (e.currentTarget as HTMLElement).style.background = "transparent"; }}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
+            <ProjectsDashboard
+              projects={projects}
+              userId={user?.uid}
+              onSelectProject={(id) => navigate({ search: { projectId: id } })}
+              onRefreshProjects={refreshProjects}
+              onStartNew={(newMode) => {
+                if (newMode) setMode(newMode);
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+            />
           </motion.div>
+
+          {/* ── Card 2: Showcase Models Gallery (Only for Non-Pro Users) ── */}
+          {plan !== "pro" && (
+            <div id="showcase-section" className="md:col-span-12">
+              <ShowcaseGallery
+                onSelectShowcase={(proj) => {
+                  setActiveProject(proj);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+              />
+            </div>
+          )}
 
           {/* ── Feature Cards (3 × col-span-4) ── */}
           {[
@@ -2528,21 +2472,29 @@ function Index() {
       </section>
 
       {/* ── Footer ── */}
-      <footer className="relative z-10 border-t py-10 px-6" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+      <footer className="relative z-10 border-t border-border/40 py-10 px-6 bg-slate-50/50 dark:bg-black/30 backdrop-blur-md">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 overflow-hidden items-center justify-center rounded-lg border border-border shadow-sm transition-transform duration-300 hover:scale-105 bg-[#0A0A0F]">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 overflow-hidden items-center justify-center rounded-xl border border-border shadow-md transition-transform duration-300 hover:scale-105 bg-[#0A0A0F]">
               <img src="/logo.jpg" alt="TOLZY Flow Logo" className="w-full h-full object-cover" />
             </div>
             <div>
-              <p className="text-xs font-black font-mono bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70 dark:from-white dark:to-white/70">TOLZY Flow</p>
-              <p className="text-[9px] text-indigo-400/70 mt-0.5">مهندس المستندات الذكي</p>
+              <p className="text-xs font-black font-mono bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-white dark:to-white/80">TOLZY Flow</p>
+              <p className="text-[10px] text-muted-foreground font-medium mt-0.5">منصة توليد المستندات والشرائح بالذكاء الاصطناعي</p>
             </div>
           </div>
-          <p className="text-[10px]" style={{ color: "#52526a" }}>
-            © {new Date().getFullYear()} TOLZY Flow · من إنتاج{" "}
-            <span className="font-bold text-foreground dark:text-white">TOLZY Labs</span>
-          </p>
+
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <span>© {new Date().getFullYear()} TOLZY Flow · من إنتاج وتصميم </span>
+            <a
+              href="https://tolzy.me"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-bold text-indigo-600 dark:text-indigo-400 hover:underline transition-colors"
+            >
+              TOLZY Team
+            </a>
+          </div>
         </div>
       </footer>
     </main>

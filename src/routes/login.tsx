@@ -275,6 +275,14 @@ function LoginPage() {
                 ترقية الحساب الآن
               </a>
 
+              <a
+                href="/showcase"
+                className="w-full flex items-center justify-center gap-2 rounded-2xl py-3 text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all shadow-sm cursor-pointer"
+              >
+                <Sparkles className="h-4 w-4 text-emerald-400 animate-pulse" />
+                استعرض نماذج التوليد الفائقة (Showcase)
+              </a>
+
               <button
                 onClick={() => signOut()}
                 className="w-full flex items-center justify-center gap-2.5 rounded-2xl py-3.5 text-sm font-semibold transition-all"
@@ -293,8 +301,17 @@ function LoginPage() {
           </div>
 
           {/* Powered-by note */}
-          <p className="mt-5 text-center text-[10px]" style={{ color: "#3d3d52" }}>
-            مشغّل بواسطة <span className="text-[#52526a] font-semibold">TOLZY Labs</span> · جميع الحقوق محفوظة
+          <p className="mt-5 text-center text-[11px] text-muted-foreground">
+            من إنتاج وتصميم{" "}
+            <a
+              href="https://tolzy.me"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-bold text-indigo-600 dark:text-indigo-400 hover:underline transition-colors"
+            >
+              TOLZY Team
+            </a>{" "}
+            · جميع الحقوق محفوظة
           </p>
         </motion.div>
       ) : (
@@ -363,6 +380,18 @@ function LoginPage() {
                 <span className="font-extrabold" style={{ color: activeTab === "login" ? "#a5b4fc" : "#6ee7b7" }}>AXIOM Flow</span>
               </p>
             </div>
+
+            {/* Showcase Banner Button */}
+            <a
+              href="/showcase"
+              className="w-full mb-5 flex items-center justify-between gap-2 rounded-2xl py-3 px-4 text-xs font-bold text-emerald-300 bg-emerald-500/10 border border-emerald-500/25 hover:bg-emerald-500/20 transition-all shadow-sm cursor-pointer relative z-10"
+            >
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-emerald-400 animate-pulse" />
+                <span>استكشف قوة أداء النموذج مجاناً (Showcase)</span>
+              </div>
+              <span className="text-[10px] bg-emerald-400/20 px-2.5 py-0.5 rounded-lg text-emerald-300 font-mono font-bold">معاينة حية ⚡</span>
+            </a>
 
             {/* Tabs switcher */}
             <div 
@@ -683,8 +712,17 @@ function LoginPage() {
           </div>
 
           {/* Powered-by note */}
-          <p className="mt-5 text-center text-[10px] relative z-10" style={{ color: "#3d3d52" }}>
-            مشغّل بواسطة <span className="text-[#52526a] font-semibold">AXIOM Labs</span> · جميع الحقوق محفوظة
+          <p className="mt-5 text-center text-[11px] text-muted-foreground relative z-10">
+            من إنتاج وتصميم{" "}
+            <a
+              href="https://tolzy.me"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-bold text-indigo-600 dark:text-indigo-400 hover:underline transition-colors"
+            >
+              TOLZY Team
+            </a>{" "}
+            · جميع الحقوق محفوظة
           </p>
         </motion.div>
 
