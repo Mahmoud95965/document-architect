@@ -204,34 +204,34 @@ function DebouncedTextarea({
   );
 }
 
-const AXIOM_UPDATES = [
+const TOLZY_FLOW_V2_UPDATES = [
   {
-    title: "مستندات Word ذكية (RTL)",
-    description: "دعم كامل للغة العربية والـ RTL لمنع تداخل الأقواس والرموز، مع شريط جانبي Indigo فخم وتصميم جداول Word أنيقة وعصرية.",
-    icon: FileText,
+    title: "محرك الذكاء الاصطناعي الفائق Kimi-K2.6",
+    description: "توليد مستندات تنفيذية عميقة، جداول Excel محاسبية حية مع دعم كامل للمعادلات، وعروض تقديمية جذابة مع صياغة لغوية ممتازة.",
+    icon: Sparkles,
     color: "text-indigo-400 border-indigo-500/20 bg-indigo-500/10",
     glowColor: "radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)",
   },
   {
-    title: "جداول Excel محاسبية",
-    description: "مظهر أخضر احترافي ونظيف، تنسيق تلقائي للعملات والآلاف، وتنسيق مزدوج (Double Underline) للإجماليات بطريقة مالية معتمدة.",
-    icon: FileSpreadsheet,
+    title: "مركز أوامر الذكاء الاصطناعي (AI Command Center)",
+    description: "واجهة عائمة جديدة بالكامل مع أزرار التنقل السريعة بين Word و Excel و PPTX، وأفكار سريعة بنقرة واحدة، واختصارات الكيبورد.",
+    icon: LayoutTemplate,
     color: "text-emerald-400 border-emerald-500/20 bg-emerald-500/10",
     glowColor: "radial-gradient(circle, rgba(16,185,129,0.15) 0%, transparent 70%)",
   },
   {
-    title: "شرائح PowerPoint سينمائية",
-    description: "تقييد الصور لـ (2) كحد أقصى، تقسيم الشريحة لأعمدة مستقلة لمنع تراكب النصوص فوق الصور، تكبير خطوط العروض، وتعتيم الكروت للقراءة المريحة.",
+    title: "معرض النماذج التفاعلية (Showcase Gallery)",
+    description: "إمكانية معاينة واختبار نماذج التوليد الحية مجاناً للاطلاع على دقة وسرعة المعالجة وقوة المعادلات قبل الترقية.",
+    icon: FileSpreadsheet,
+    color: "text-sky-400 border-sky-500/20 bg-sky-500/10",
+    glowColor: "radial-gradient(circle, rgba(14,165,233,0.15) 0%, transparent 70%)",
+  },
+  {
+    title: "حفظ ومزامنة المشاريع في Supabase",
+    description: "مزامنة تلقائية وآمنة لمشاريع كل مستخدم على حدة مع إمكانية التنزيل المباشر بصيغ DOCX و XLSX و PPTX في أي وقت.",
     icon: Presentation,
     color: "text-orange-400 border-orange-500/20 bg-orange-500/10",
     glowColor: "radial-gradient(circle, rgba(249,115,22,0.15) 0%, transparent 70%)",
-  },
-  {
-    title: "واجهة متطورة وروابط مشاركة",
-    description: "روابط فريدة خاصة بكل مشروع لتسهيل مشاركته أو حفظه، مع واجهة لوحة تحكم زجاجية تفاعلية تتغير ألوانها ديناميكياً بحسب نوع المستند.",
-    icon: Sparkles,
-    color: "text-sky-400 border-sky-500/20 bg-sky-500/10",
-    glowColor: "radial-gradient(circle, rgba(14,165,233,0.15) 0%, transparent 70%)",
   }
 ];
 
@@ -1876,7 +1876,7 @@ function Index() {
               {/* Subtle background glow blobs inside modal (hidden on mobile for performance) */}
               <div 
                 className="absolute top-0 right-0 w-[250px] h-[250px] rounded-full blur-[90px] pointer-events-none transition-all duration-500 hidden md:block" 
-                style={{ background: AXIOM_UPDATES[v2ModalSlide].glowColor }} 
+                style={{ background: TOLZY_FLOW_V2_UPDATES[v2ModalSlide].glowColor }} 
               />
               
               {/* Top Accent Line */}
@@ -1885,20 +1885,20 @@ function Index() {
               {/* Fixed/Pinned Logo at the Top */}
               <div className="flex flex-col items-center justify-center relative z-10 pt-2 mb-6">
                 <div className="relative flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 overflow-hidden bg-[#0A0A0F] shadow-lg mb-2">
-                  <img src="/logo.jpg" alt="AXIOM Logo" className="w-full h-full object-cover" />
+                  <img src="/logo.jpg" alt="TOLZY Flow Logo" className="w-full h-full object-cover" />
                   <div className="absolute inset-0 rounded-xl border border-white/5 pointer-events-none" />
                 </div>
                 <h3 className="text-xs font-black tracking-widest font-mono uppercase bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70">
-                  AXIOM
+                  TOLZY Flow 2.0
                 </h3>
               </div>
 
               {/* Header */}
               <div className="text-center mb-6 relative z-10">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-indigo-500/30 text-[10px] font-bold text-indigo-400 bg-indigo-500/10 mb-2.5 animate-pulse">
-                  ✨ تحديثات منصة AXIOM
+                  🎉 إطلاق التحديث الجديد TOLZY Flow 2.0
                 </span>
-                <h2 className="text-xl font-black text-white leading-tight">ما الجديد في إصدار AXIOM؟</h2>
+                <h2 className="text-xl font-black text-white leading-tight">أهلاً بك في منصة TOLZY Flow 2.0</h2>
               </div>
 
               {/* Slide Content (One News Item per slide) */}
@@ -1913,19 +1913,19 @@ function Index() {
                     className="w-full flex flex-col items-center text-center"
                   >
                     {/* Icon */}
-                    <div className={`flex h-14 w-14 items-center justify-center rounded-2xl mb-4 border ${AXIOM_UPDATES[v2ModalSlide].color} shadow-lg`}>
+                    <div className={`flex h-14 w-14 items-center justify-center rounded-2xl mb-4 border ${TOLZY_FLOW_V2_UPDATES[v2ModalSlide].color} shadow-lg`}>
                       {(() => {
-                        const IconComponent = AXIOM_UPDATES[v2ModalSlide].icon;
+                        const IconComponent = TOLZY_FLOW_V2_UPDATES[v2ModalSlide].icon;
                         return <IconComponent className="h-6 w-6" />;
                       })()}
                     </div>
 
                     {/* Slide Title */}
-                    <h3 className="text-base font-bold text-white mb-2">{AXIOM_UPDATES[v2ModalSlide].title}</h3>
+                    <h3 className="text-base font-bold text-white mb-2">{TOLZY_FLOW_V2_UPDATES[v2ModalSlide].title}</h3>
                     
                     {/* Slide Description */}
                     <p className="text-xs leading-relaxed max-w-sm text-[#a1a1b5]">
-                      {AXIOM_UPDATES[v2ModalSlide].description}
+                      {TOLZY_FLOW_V2_UPDATES[v2ModalSlide].description}
                     </p>
                   </motion.div>
                 </AnimatePresence>
@@ -1933,7 +1933,7 @@ function Index() {
 
               {/* Progress dots */}
               <div className="flex justify-center gap-1.5 mb-6 relative z-10">
-                {AXIOM_UPDATES.map((_, idx) => (
+                {TOLZY_FLOW_V2_UPDATES.map((_, idx) => (
                   <button
                     key={idx}
                     onClick={() => setV2ModalSlide(idx)}
@@ -1957,7 +1957,7 @@ function Index() {
                     <div />
                   )}
 
-                  {v2ModalSlide < AXIOM_UPDATES.length - 1 ? (
+                  {v2ModalSlide < TOLZY_FLOW_V2_UPDATES.length - 1 ? (
                     <button
                       onClick={() => setV2ModalSlide(v => v + 1)}
                       className="px-5 py-2 flex items-center justify-center gap-1.5 rounded-xl text-xs font-bold text-[#050507] bg-white hover:bg-indigo-50/90 hover:scale-102 active:scale-98 transition-all cursor-pointer"
@@ -1971,10 +1971,10 @@ function Index() {
                         localStorage.setItem("tolzy_v2_dismissed", "true");
                         setShowV2Modal(false);
                       }}
-                      className="px-5 py-2 flex items-center justify-center gap-1.5 rounded-xl text-xs font-bold text-[#050507] bg-indigo-500 hover:bg-indigo-400 hover:scale-102 active:scale-98 transition-all cursor-pointer text-white shadow-[0_0_20px_rgba(99,102,241,0.4)]"
+                      className="px-5 py-2 flex items-center justify-center gap-1.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 hover:scale-102 active:scale-98 transition-all cursor-pointer text-white shadow-[0_0_20px_rgba(99,102,241,0.4)]"
                     >
                       <Sparkles className="h-3.5 w-3.5 text-white" />
-                      ابدأ استكشاف AXIOM
+                      ابدأ استكشاف TOLZY Flow 2.0 الان
                     </button>
                   )}
                 </div>
