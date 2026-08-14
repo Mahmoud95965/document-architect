@@ -206,7 +206,7 @@ function DebouncedTextarea({
 
 const TOLZY_FLOW_V2_UPDATES = [
   {
-    title: "محرك الذكاء الاصطناعي الفائق Kimi-K2.6",
+    title: "محرك الذكاء الاصطناعي الفائق AXIOM (النسخة المطورة)",
     description: "توليد مستندات تنفيذية عميقة، جداول Excel محاسبية حية مع دعم كامل للمعادلات، وعروض تقديمية جذابة مع صياغة لغوية ممتازة.",
     icon: Sparkles,
     color: "text-indigo-400 border-indigo-500/20 bg-indigo-500/10",
@@ -2141,7 +2141,7 @@ function Index() {
           >
             <div className="glow-dot" style={{ boxShadow: "0 0 10px 3px rgba(110,231,183,0.5)" }} />
             <span className="text-[11px] font-bold tracking-wider text-indigo-700 dark:text-indigo-200">
-              Powered by Kimi-K2.6 · المعالجة الفورية
+              Powered by AXIOM Ultra Engine · النسخة المطورة
             </span>
           </motion.div>
 
