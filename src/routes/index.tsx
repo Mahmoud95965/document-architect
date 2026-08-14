@@ -2129,7 +2129,7 @@ function Index() {
           )}
         </div>
       </nav>
-      <section className="relative z-10 mx-auto max-w-5xl px-6 pt-32 pb-8 text-center">
+      <section className="relative z-10 mx-auto max-w-5xl px-6 pt-28 pb-10 text-center">
 
         {/* Status badge & Showcase jump */}
         <div className="flex flex-wrap items-center justify-center gap-3 mb-6">
@@ -2137,15 +2137,10 @@ function Index() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2.5 rounded-full px-4 py-1.5 backdrop-blur-md transition-all duration-300 hover:scale-105"
-            style={{ 
-              background: "rgba(99,102,241,0.08)", 
-              border: "1px solid rgba(99,102,241,0.2)",
-              boxShadow: "0 4px 20px -2px rgba(99,102,241,0.15), inset 0 0 12px 1px rgba(99,102,241,0.05)"
-            }}
+            className="inline-flex items-center gap-2.5 rounded-full px-4 py-1.5 backdrop-blur-md transition-all duration-300 hover:scale-105 border border-indigo-500/20 bg-indigo-500/10 shadow-sm"
           >
             <div className="glow-dot" style={{ boxShadow: "0 0 10px 3px rgba(110,231,183,0.5)" }} />
-            <span className="text-[11px] font-bold tracking-wider" style={{ color: "#c7d2fe" }}>
+            <span className="text-[11px] font-bold tracking-wider text-indigo-700 dark:text-indigo-200">
               Powered by Kimi-K2.6 · المعالجة الفورية
             </span>
           </motion.div>
@@ -2166,18 +2161,18 @@ function Index() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.07 }}
-          className="text-4xl sm:text-6xl font-black tracking-tight leading-[1.08] select-none"
+          className="text-4xl sm:text-6xl font-black tracking-tight leading-[1.1] select-none"
         >
           <span className="text-gradient">
             {mode === "excel"
-              ? "جداول إكسل ذكية"
+              ? "جداول إكسل ذكية بلمسة واحدة"
               : mode === "presentation"
-              ? "عروض تقديمية مبهرة"
-              : "مستندات احترافية"}
+              ? "عروض تقديمية مبهرة وتفاعلية"
+              : "مستندات وتقارير تنفيذية احترافية"}
           </span>
           <br />
-          <span className="text-foreground/90 dark:text-white/90">
-            {mode === "excel" ? "مدعومة بالذكاء الاصطناعي." : mode === "presentation" ? "مدعومة بالذكاء الاصطناعي." : "مدعومة بالذكاء الاصطناعي."}
+          <span className="text-slate-800 dark:text-white/90 text-2xl sm:text-4xl font-extrabold mt-2 block">
+            صمم وحرر مستنداتك بالذكاء الاصطناعي الفائق
           </span>
         </motion.h1>
 
@@ -2186,90 +2181,90 @@ function Index() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.14 }}
-          className="mt-5 text-base sm:text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed"
+          className="mt-4 text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed font-medium"
         >
-          اكتب فكرتك، واحصل على{" "}
-          {mode === "excel" ? "جدول Excel" : mode === "presentation" ? "عرض PowerPoint" : "مستند Word"}{" "}
-          احترافي جاهز للتحميل في ثوانٍ.
+          اكتب فكرتك بلغة طبيعية، وسيقوم محرك الذكاء الاصطناعي ببناء{" "}
+          <span className="font-bold text-foreground dark:text-white">
+            {mode === "excel" ? "جدول Excel بمعادلات حية" : mode === "presentation" ? "عرض PowerPoint بتصميم عصري" : "مستند Word بتنسيق تنفيذي"}
+          </span>{" "}
+          جاهز للتحميل والتعديل المباشر.
         </motion.p>
 
-        {/* ── Prompt Card ── */}
+        {/* ── Floating AI Command Center ── */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="mt-10 relative"
+          className="mt-8 relative"
         >
-          {/* Mode selector tabs */}
-          <div className="flex items-center justify-center gap-1.5 mb-4">
-            {(["word", "excel", "presentation"] as DocMode[]).map(m => (
-              <button
-                key={m}
-                onClick={() => { setMode(m); setPrompt(""); }}
-                className={`mode-btn transition-all duration-300 scale-100 hover:scale-[1.02] active:scale-[0.98] ${
-                  mode === m
-                    ? m === "word" ? "mode-btn-word" : m === "excel" ? "mode-btn-excel" : "mode-btn-ppt"
-                    : "mode-btn-inactive"
-                }`}
-                style={{
-                  boxShadow: mode === m
-                    ? m === "word" 
-                      ? "0 4px 15px -3px rgba(129,140,248,0.3)" 
-                      : m === "excel" 
-                      ? "0 4px 15px -3px rgba(52,211,153,0.3)" 
-                      : "0 4px 15px -3px rgba(251,146,60,0.3)"
-                    : "none"
-                }}
-              >
-                {m === "excel" ? (
-                  <FileSpreadsheet className="h-3.5 w-3.5" />
-                ) : m === "presentation" ? (
-                  <Presentation className="h-3.5 w-3.5" />
-                ) : (
-                  <LayoutTemplate className="h-3.5 w-3.5" />
-                )}
-                {m === "excel" ? "جدول بيانات Excel" : m === "presentation" ? "عرض تقديمي PPTX" : "مستند Word رسمي"}
-              </button>
-            ))}
+          {/* Mode Selector Glass Bar */}
+          <div className="flex items-center justify-center gap-2 mb-4 p-1.5 rounded-2xl glass-card max-w-md mx-auto border border-border/60 shadow-lg">
+            {(["word", "excel", "presentation"] as DocMode[]).map((m) => {
+              const isActive = mode === m;
+              const accent = m === "word" ? "#818cf8" : m === "excel" ? "#34d399" : "#fb923c";
+              return (
+                <button
+                  key={m}
+                  onClick={() => {
+                    setMode(m);
+                    setPrompt("");
+                  }}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all duration-300 cursor-pointer ${
+                    isActive
+                      ? "text-white shadow-md scale-[1.02]"
+                      : "text-muted-foreground hover:text-foreground hover:bg-slate-100 dark:hover:bg-white/5"
+                  }`}
+                  style={{
+                    backgroundColor: isActive ? accent : "transparent",
+                    boxShadow: isActive ? `0 4px 20px -2px ${accent}50` : "none",
+                  }}
+                >
+                  {m === "excel" ? (
+                    <FileSpreadsheet className="h-4 w-4" />
+                  ) : m === "presentation" ? (
+                    <Presentation className="h-4 w-4" />
+                  ) : (
+                    <LayoutTemplate className="h-4 w-4" />
+                  )}
+                  <span>{m === "excel" ? "Excel" : m === "presentation" ? "PPTX" : "Word"}</span>
+                </button>
+              );
+            })}
           </div>
 
-          {/* Textarea wrapped with elegant soft blue faint ripples */}
+          {/* AI Prompt Box Container */}
           <div className="relative">
-            {/* Soft Concentric Ambient Glow Rings (hidden on mobile for performance) */}
+            {/* Ambient Mode Glow */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0 hidden md:flex">
               <motion.div
-                animate={{ scale: [1, 1.06, 1], opacity: [0.35, 0.55, 0.35] }}
+                animate={{ scale: [1, 1.05, 1], opacity: [0.3, 0.5, 0.3] }}
                 transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute w-[108%] h-[112%] rounded-3xl blur-[60px]"
-                style={{ background: `radial-gradient(circle, ${currentMode.color}22 0%, rgba(99,102,241,0.04) 50%, transparent 70%)` }}
-              />
-              <motion.div
-                animate={{ scale: [1.05, 0.96, 1.05], opacity: [0.2, 0.4, 0.2] }}
-                transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-                className="absolute w-[118%] h-[122%] rounded-3xl blur-[80px]"
-                style={{ background: `radial-gradient(circle, ${currentMode.color}0f 0%, transparent 70%)` }}
+                className="absolute w-[105%] h-[110%] rounded-3xl blur-[70px]"
+                style={{ background: `radial-gradient(circle, ${currentMode.color}25 0%, transparent 70%)` }}
               />
             </div>
 
             <div
-              className="relative z-10 rounded-3xl overflow-hidden p-6 transition-all duration-300 border"
-              style={{ 
-                background: "rgba(10, 10, 15, 0.7)", 
-                backdropFilter: "blur(20px)",
-                borderColor: isPromptFocused ? `${currentMode.color}50` : "rgba(255, 255, 255, 0.08)",
-                boxShadow: isPromptFocused 
-                  ? `0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 50px -10px ${currentMode.color}30, inset 0 0 0 1px rgba(255, 255, 255, 0.02)` 
-                  : `0 20px 50px -12px rgba(0, 0, 0, 0.5), 0 0 40px -10px ${currentMode.color}0f, inset 0 0 0 1px rgba(255, 255, 255, 0.01)`
+              className="relative z-10 rounded-3xl overflow-hidden p-6 transition-all duration-300 border bg-white/90 dark:bg-[#0a0a0f]/90 backdrop-blur-2xl shadow-2xl"
+              style={{
+                borderColor: isPromptFocused ? `${currentMode.color}60` : "rgba(255, 255, 255, 0.1)",
+                boxShadow: isPromptFocused
+                  ? `0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 50px -10px ${currentMode.color}35`
+                  : `0 20px 50px -12px rgba(0, 0, 0, 0.5), 0 0 30px -10px ${currentMode.color}15`,
               }}
             >
-              {/* Glow accent line at top */}
-              <div className="h-px w-full absolute top-0 left-0" style={{ background: `linear-gradient(90deg, transparent, ${currentMode.color}60, transparent)` }} />
+              {/* Glow Accent Top Border */}
+              <div
+                className="h-1 w-full absolute top-0 left-0 transition-all duration-500"
+                style={{ background: `linear-gradient(90deg, transparent, ${currentMode.color}, transparent)` }}
+              />
 
+              {/* Textarea Prompt Input */}
               <textarea
                 value={prompt}
-                onChange={e => setPrompt(e.target.value.slice(0, 8000))}
-                onKeyDown={e => {
-                  if (e.key === "Enter" && !e.shiftKey) {
+                onChange={(e) => setPrompt(e.target.value.slice(0, 8000))}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
                     e.preventDefault();
                     if (prompt.trim().length >= 8 && !loading) {
                       onGenerate();
@@ -2278,63 +2273,83 @@ function Index() {
                 }}
                 onFocus={() => setIsPromptFocused(true)}
                 onBlur={() => setIsPromptFocused(false)}
-                rows={5}
+                rows={4}
                 placeholder={
                   mode === "excel"
-                    ? "صف نموذج الجدول الذكي الذي تريد بناءه (مثلاً: نموذج أرباح وخسائر لـ 6 أشهر مع معادلات تلقائية)..."
+                    ? "صف نموذج جدول بيانات Excel الذي تريد بناءه (مثلاً: جدول إدارة مخزون مع تنبيهات النقص ومعادلات SUM و IF)..."
                     : mode === "presentation"
-                    ? "صف موضوع العرض التقديمي الذي تريد بناءه مع الصور والمحتوى..."
-                    : "صف المستند أو التقرير الشامل الذي تريد إنشاءه..."
+                    ? "صف موضوع العرض التقديمي PPTX (مثلاً: عرض تقديمي لتدشين تطبيق ذكي ومؤشرات النمو المستقبلي)..."
+                    : "صف المستند أو التقرير الشامل الذي تريد إنشاءه (مثلاً: تقرير تنفيذي عن أثر الذكاء الاصطناعي بحلول عام 2030)..."
                 }
-                className="w-full bg-transparent text-xl font-bold text-foreground dark:text-white placeholder:text-muted-foreground outline-none resize-none text-right animate-fade-in"
+                className="w-full bg-transparent text-base sm:text-lg font-bold text-foreground dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none resize-none text-right leading-relaxed"
                 style={{ direction: "rtl" }}
               />
 
-              {/* Bottom Row */}
-              <div className="flex items-center justify-between mt-4 border-t border-border/50 pt-4">
-                {/* Character Count */}
-                <div className="text-[10px] text-muted-foreground font-mono">
-                  {prompt.length} / 8000
-                </div>
-
-                {/* Right side: Model Selector + Mic + Generate Button */}
-                <div className="flex items-center gap-3">
-                  {/* Model Selector Pill */}
-                  <div
-                    className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full border border-border/50 text-[11px] font-semibold text-slate-700 dark:text-slate-300 animate-pulse"
-                    style={{ background: "rgba(255,255,255,0.02)" }}
-                  >
-                    <Sparkles className="h-3.5 w-3.5 text-indigo-400" />
-                    <span>AXIOM</span>
-                  </div>
-
-                  {/* Submit Action */}
+              {/* Quick Prompt Presets */}
+              <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-border/40 text-right" style={{ direction: "rtl" }}>
+                <span className="text-[11px] font-bold text-muted-foreground flex items-center gap-1">
+                  <Sparkles className="h-3 w-3 text-amber-500" />
+                  أفكار سريعة جاهزة:
+                </span>
+                {(mode === "excel"
+                  ? [
+                      "📊 جدول إدارة ومراقبة المخزون الذكي والموردين",
+                      "💰 جدول ميزانية وحساب أرباح وخسائر لـ 6 أشهر",
+                    ]
+                  : mode === "presentation"
+                  ? [
+                      "🚀 عرض تقديمي لتدشين منصة رقمية ومراحل الإطلاق",
+                      "📈 عرض استثماري للنمو وجذب المستثمرين (Pitch Deck)",
+                    ]
+                  : [
+                      "📝 تقرير تنفيذي عن الذكاء الاصطناعي وسوق العمل 2030",
+                      "💼 خطة عمل استراتيجية لزيادة المبيعات والحصة السوقية",
+                    ]
+                ).map((preset, pIdx) => (
                   <button
-                    onClick={onGenerate}
-                    disabled={loading || prompt.trim().length < 8}
-                    className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-all disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 text-[#050507]"
-                    style={{
-                      background: loading
-                        ? "rgba(255,255,255,0.05)"
-                        : "linear-gradient(135deg, #fff 0%, #e8e8ff 100%)",
-                      boxShadow: (!loading && prompt.trim().length >= 8)
-                        ? `0 0 25px 3px ${currentMode.color}45`
-                        : "none",
-                    }}
+                    key={pIdx}
+                    onClick={() => setPrompt(preset)}
+                    className="text-[11px] font-bold px-3 py-1 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-300 border border-border/60 transition-all text-slate-700 dark:text-slate-300 cursor-pointer"
                   >
-                    {loading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />
-                        <span>جاري البناء...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="h-4 w-4 text-indigo-600" />
-                        <span>ابدأ التصميم</span>
-                      </>
-                    )}
+                    {preset}
                   </button>
+                ))}
+              </div>
+
+              {/* Action Bar Bottom */}
+              <div className="flex items-center justify-between mt-4 pt-3 border-t border-border/50">
+                {/* Character Count & Keybindings */}
+                <div className="flex items-center gap-3 text-[10px] text-muted-foreground font-mono font-bold">
+                  <span>{prompt.length} / 8000</span>
+                  <span className="hidden sm:inline-block bg-slate-100 dark:bg-white/5 px-2 py-0.5 rounded border border-border">
+                    Ctrl + Enter ↵ للتوليد
+                  </span>
                 </div>
+
+                {/* Submit Button */}
+                <button
+                  onClick={onGenerate}
+                  disabled={loading || prompt.trim().length < 8}
+                  className="flex items-center justify-center gap-2 px-6 py-3 rounded-2xl font-black text-xs transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 text-white shadow-xl btn-shimmer cursor-pointer"
+                  style={{
+                    background: loading
+                      ? "rgba(255,255,255,0.1)"
+                      : `linear-gradient(135deg, ${currentMode.color} 0%, #4f46e5 100%)`,
+                    boxShadow: !loading && prompt.trim().length >= 8 ? `0 10px 30px -5px ${currentMode.color}60` : "none",
+                  }}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin text-white" />
+                      <span>جاري المعالجة والبناء...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4 text-white animate-pulse" />
+                      <span>توليد وتصميم المستند الآن</span>
+                    </>
+                  )}
+                </button>
               </div>
             </div>
           </div>
