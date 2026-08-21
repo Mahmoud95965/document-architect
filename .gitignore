@@ -30,3 +30,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment variables (contains secret API keys - NEVER commit these)
+.env
+.env.*
+!.env.example
